@@ -27,8 +27,7 @@ export class FileSecurityService {
     private configService: ConfigService,
     private clamavService: ClamavService,
   ) {
-    this.ENABLE_VIRUS_SCAN =
-      this.configService.get<string>('ENABLE_VIRUS_SCAN', 'true') === 'true';
+    this.ENABLE_VIRUS_SCAN = this.configService.get<string>('ENABLE_VIRUS_SCAN', 'true') === 'true';
   }
 
   /**
@@ -154,12 +153,7 @@ export class FileSecurityService {
   /**
    * Audit log for file operations
    */
-  auditLog(
-    action: string,
-    fileId: string,
-    userId: string,
-    metadata?: Record<string, any>,
-  ): void {
+  auditLog(action: string, fileId: string, userId: string, metadata?: Record<string, any>): void {
     const logEntry = {
       timestamp: new Date().toISOString(),
       action,

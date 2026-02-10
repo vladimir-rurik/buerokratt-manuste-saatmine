@@ -11,12 +11,9 @@ export class ClamavService implements OnModuleInit {
   private readonly CLAMAV_TIMEOUT: number;
 
   constructor(private configService: ConfigService) {
-    this.CLAMAV_HOST =
-      this.configService.get<string>('CLAMAV_HOST', 'localhost');
-    this.CLAMAV_PORT =
-      this.configService.get<number>('CLAMAV_PORT', 3310);
-    this.CLAMAV_TIMEOUT =
-      this.configService.get<number>('CLAMAV_TIMEOUT', 60000);
+    this.CLAMAV_HOST = this.configService.get<string>('CLAMAV_HOST', 'localhost');
+    this.CLAMAV_PORT = this.configService.get<number>('CLAMAV_PORT', 3310);
+    this.CLAMAV_TIMEOUT = this.configService.get<number>('CLAMAV_TIMEOUT', 60000);
   }
 
   async onModuleInit() {

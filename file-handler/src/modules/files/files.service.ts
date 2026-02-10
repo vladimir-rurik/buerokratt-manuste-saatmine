@@ -96,11 +96,7 @@ export class FilesService {
   /**
    * Update scan status
    */
-  async updateScanStatus(
-    fileId: string,
-    status: string,
-    result?: string,
-  ): Promise<void> {
+  async updateScanStatus(fileId: string, status: string, result?: string): Promise<void> {
     const query = `
       UPDATE file_attachments
       SET scan_status = $1, scan_result = $2

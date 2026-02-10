@@ -24,12 +24,7 @@ import { memoryStorage } from 'multer';
     DatabaseModule,
   ],
   controllers: [FilesController],
-  providers: [
-    FilesService,
-    FileValidationService,
-    FileUploadService,
-    FileSecurityService,
-  ],
+  providers: [FilesService, FileValidationService, FileUploadService, FileSecurityService],
   exports: [FilesService],
 })
 export class FilesModule {}

@@ -1,14 +1,13 @@
-import { Injectable, BadRequestException, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { Injectable, Logger } from '@nestjs/common';
 import { extname, basename } from 'path';
 
-interface ValidationResult {
+export interface ValidationResult {
   valid: boolean;
   errors: string[];
   warnings: string[];
 }
 
-interface FileMetadata {
+export interface FileMetadata {
   originalName: string;
   mimeType: string;
   size: number;
@@ -27,25 +26,14 @@ export class FileValidationService {
       'application/rtf',
       'text/plain',
     ],
-    image: [
-      'image/jpeg',
-      'image/png',
-      'image/gif',
-      'image/webp',
-      'image/svg+xml',
-    ],
+    image: ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'],
     archive: [
       'application/zip',
       'application/x-tar',
       'application/gzip',
       'application/x-7z-compressed',
     ],
-    data: [
-      'application/json',
-      'application/xml',
-      'text/xml',
-      'text/csv',
-    ],
+    data: ['application/json', 'application/xml', 'text/xml', 'text/csv'],
   };
 
   private readonly FILE_SIZE_LIMITS: Record<string, number> = {
@@ -64,7 +52,7 @@ export class FileValidationService {
     'application/gzip': Buffer.from([0x1f, 0x8b]),
   };
 
-  constructor(private configService: ConfigService) {}
+  constructor() {}
 
   /**
    * Validate file upload request
@@ -193,9 +181,7 @@ export class FileValidationService {
 
     if (extToMime[extWithoutDot] && extToMime[extWithoutDot] !== mimeType) {
       result.valid = false;
-      result.errors.push(
-        `File extension "${ext}" does not match MIME type "${mimeType}"`,
-      );
+      result.errors.push(`File extension "${ext}" does not match MIME type "${mimeType}"`);
     }
 
     return result;

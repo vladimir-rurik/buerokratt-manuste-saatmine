@@ -27,8 +27,7 @@ export class StorageService {
   private readonly S3_FERRY_URL: string;
 
   constructor(private configService: ConfigService) {
-    this.S3_FERRY_URL =
-      this.configService.get<string>('S3_FERRY_URL', 'http://s3-ferry:3000');
+    this.S3_FERRY_URL = this.configService.get<string>('S3_FERRY_URL', 'http://s3-ferry:3000');
   }
 
   /**
@@ -40,24 +39,17 @@ export class StorageService {
         `Creating file: ${request.files[0].fileName} in container ${request.files[0].container}`,
       );
 
-      const response = await axios.post(
-        `${this.S3_FERRY_URL}/v1/files/create`,
-        request,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          timeout: 300000, // 5 minutes timeout for large files
+      const response = await axios.post(`${this.S3_FERRY_URL}/v1/files/create`, request, {
+        headers: {
+          'Content-Type': 'application/json',
         },
-      );
+        timeout: 300000, // 5 minutes timeout for large files
+      });
 
       this.logger.log(`File created successfully: ${request.files[0].fileName}`);
       return response.data;
     } catch (error) {
-      this.logger.error(
-        `Failed to create file: ${error.message}`,
-        error.stack,
-      );
+      this.logger.error(`Failed to create file: ${error.message}`, error.stack);
       throw new HttpException(
         `Failed to create file: ${error.message}`,
         error.response?.status || 500,
@@ -74,22 +66,16 @@ export class StorageService {
         `Deleting file: ${request.files[0].fileName} from container ${request.files[0].container}`,
       );
 
-      const response = await axios.delete(
-        `${this.S3_FERRY_URL}/v1/files/delete`,
-        {
-          data: request,
-          headers: {
-            'Content-Type': 'application/json',
-          },
+      const response = await axios.delete(`${this.S3_FERRY_URL}/v1/files/delete`, {
+        data: request,
+        headers: {
+          'Content-Type': 'application/json',
         },
-      );
+      });
 
       this.logger.log(`File deleted successfully: ${request.files[0].fileName}`);
     } catch (error) {
-      this.logger.error(
-        `Failed to delete file: ${error.message}`,
-        error.stack,
-      );
+      this.logger.error(`Failed to delete file: ${error.message}`, error.stack);
       throw new HttpException(
         `Failed to delete file: ${error.message}`,
         error.response?.status || 500,
@@ -102,9 +88,7 @@ export class StorageService {
    */
   async getStorageAccounts(): Promise<string[]> {
     try {
-      const response = await axios.get(
-        `${this.S3_FERRY_URL}/v1/storage-accounts`,
-      );
+      const response = await axios.get(`${this.S3_FERRY_URL}/v1/storage-accounts`);
 
       return response.data.map((acc: any) => acc.id);
     } catch (error) {

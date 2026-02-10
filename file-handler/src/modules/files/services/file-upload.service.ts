@@ -1,7 +1,5 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { S3Client } from '@aws-sdk/client-s3';
-import { Upload } from '@aws-sdk/lib-storage';
 import { v4 as uuidv4 } from 'uuid';
 import * as crypto from 'crypto';
 import { StorageService } from '../../storage/storage.service';
@@ -45,9 +43,7 @@ export class FileUploadService {
     const fileId = uuidv4();
     const checksum = crypto.createHash('sha256').update(file.buffer).digest('hex');
 
-    this.logger.log(
-      `Starting file upload: ${file.originalName} (${file.size} bytes)`,
-    );
+    this.logger.log(`Starting file upload: ${file.originalName} (${file.size} bytes)`);
 
     try {
       // Determine if multipart upload is needed
@@ -56,26 +52,16 @@ export class FileUploadService {
       // Generate storage path
       const storagePath = this.generateStoragePath(fileId, file.originalName);
       const container = this.configService.get<string>('S3_DATA_BUCKET_NAME') || 'files';
-      const storageAccountId =
-        this.configService.get<string>('STORAGE_ACCOUNT_ID') || 's3-default';
-
-      let uploadResult;
+      const storageAccountId = this.configService.get<string>('STORAGE_ACCOUNT_ID') || 's3-default';
 
       if (useMultipart) {
         this.logger.log(`Using multipart upload for large file`);
-        uploadResult = await this.uploadMultipart(
-          file,
-          storagePath,
-          container,
-          options,
-        );
+        await this.uploadMultipart(file, storagePath, container, options);
       } else {
-        uploadResult = await this.uploadSingle(file, storagePath, container);
+        await this.uploadSingle(file, storagePath, container);
       }
 
-      this.logger.log(
-        `File uploaded successfully: ${storagePath} (checksum: ${checksum})`,
-      );
+      this.logger.log(`File uploaded successfully: ${storagePath} (checksum: ${checksum})`);
 
       return {
         fileId,
@@ -103,20 +89,16 @@ export class FileUploadService {
     container: string,
   ): Promise<any> {
     // Use S3-Ferry service for actual upload
-    const response = await this.storageService.createFile({
+    await this.storageService.createFile({
       files: [
         {
-          storageAccountId: this.configService.get<string>(
-            'STORAGE_ACCOUNT_ID',
-          ) || 's3-default',
+          storageAccountId: this.configService.get<string>('STORAGE_ACCOUNT_ID') || 's3-default',
           container,
           fileName: storagePath,
         },
       ],
       content: file.buffer.toString('base64'),
     });
-
-    return response;
   }
 
   /**
@@ -131,18 +113,14 @@ export class FileUploadService {
     const chunkSize = options.chunkSize || this.DEFAULT_CHUNK_SIZE;
     const totalChunks = Math.ceil(file.size / chunkSize);
 
-    this.logger.log(
-      `Starting multipart upload: ${totalChunks} chunks of ${chunkSize} bytes`,
-    );
+    this.logger.log(`Starting multipart upload: ${totalChunks} chunks of ${chunkSize} bytes`);
 
     // For now, we'll delegate to S3-Ferry's multipart support
     // In production, you'd use AWS SDK's multipart upload directly
-    const response = await this.storageService.createFile({
+    await this.storageService.createFile({
       files: [
         {
-          storageAccountId: this.configService.get<string>(
-            'STORAGE_ACCOUNT_ID',
-          ) || 's3-default',
+          storageAccountId: this.configService.get<string>('STORAGE_ACCOUNT_ID') || 's3-default',
           container,
           fileName: storagePath,
         },
@@ -151,8 +129,6 @@ export class FileUploadService {
       multipart: true,
       chunkSize,
     });
-
-    return response;
   }
 
   /**

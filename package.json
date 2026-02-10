@@ -1,0 +1,49 @@
+{
+  "name": "buerokratt-file-storage",
+  "version": "1.0.0",
+  "description": "Secure file attachment solution for Bürokratt with validation, virus scanning, and S3-compatible storage",
+  "private": true,
+  "scripts": {
+    "install": "cd file-handler && npm install",
+    "build": "cd file-handler && npm run build",
+    "test": "cd file-handler && npm run test",
+    "test:watch": "cd file-handler && npm run test:watch",
+    "test:cov": "cd file-handler && npm run test:cov",
+    "test:e2e": "cd file-handler && npm run test:e2e",
+    "lint": "cd file-handler && npm run lint",
+    "lint:fix": "cd file-handler && npm run lint:fix",
+    "format": "cd file-handler && npm run format",
+    "start": "cd file-handler && npm run start",
+    "start:dev": "cd file-handler && npm run start:dev",
+    "start:prod": "cd file-handler && npm run start:prod",
+    "docker:build": "docker build -t file-handler:latest -f file-handler/Dockerfile file-handler",
+    "k8s:validate": "kubectl apply --dry-run=client -f crd/",
+    "k8s:apply": "kubectl apply -f crd/ -f k8s/",
+    "k8s:delete": "kubectl delete -f crd/ -f k8s/",
+    "docs:serve": "npx serve docs/"
+  },
+  "keywords": [
+    "buerokratt",
+    "file-storage",
+    "attachment",
+    "virus-scanning",
+    "s3",
+    "kubernetes"
+  ],
+  "author": "Bürokratt Development Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/buerokratt/buerokratt-manuste-saatmine"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  },
+  "devDependencies": {
+    "serve": "^14.2.0"
+  },
+  "dependencies": {
+    "@aws-sdk/lib-storage": "^3.987.0"
+  }
+}

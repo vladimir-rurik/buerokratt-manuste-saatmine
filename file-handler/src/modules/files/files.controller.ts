@@ -132,9 +132,7 @@ export class FilesController {
           ? 'clean'
           : 'infected'
         : 'pending',
-      scanResult: securityResult.scanResult
-        ? JSON.stringify(securityResult.scanResult)
-        : null,
+      scanResult: securityResult.scanResult ? JSON.stringify(securityResult.scanResult) : null,
     });
 
     // Audit log successful upload
@@ -197,8 +195,7 @@ export class FilesController {
     const userId = req.user?.sub || req.user?.userId || 'anonymous';
 
     // Check access permission
-    const hasPermission =
-      await this.securityService.checkAccessPermission(fileId, userId, 'read');
+    const hasPermission = await this.securityService.checkAccessPermission(fileId, userId, 'read');
 
     if (!hasPermission) {
       throw new BadRequestException('Access denied');
@@ -242,8 +239,11 @@ export class FilesController {
     const userId = req.user?.sub || req.user?.userId || 'anonymous';
 
     // Check access permission
-    const hasPermission =
-      await this.securityService.checkAccessPermission(fileId, userId, 'delete');
+    const hasPermission = await this.securityService.checkAccessPermission(
+      fileId,
+      userId,
+      'delete',
+    );
 
     if (!hasPermission) {
       throw new BadRequestException('Access denied');

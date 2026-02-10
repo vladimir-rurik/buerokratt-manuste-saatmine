@@ -40,9 +40,7 @@ export class DatabaseService implements OnModuleDestroy {
   /**
    * Execute transaction
    */
-  async executeTransaction(
-    callback: (client: PoolClient) => Promise<any>,
-  ): Promise<any> {
+  async executeTransaction(callback: (client: PoolClient) => Promise<any>): Promise<any> {
     const client = await this.getClient();
 
     try {
