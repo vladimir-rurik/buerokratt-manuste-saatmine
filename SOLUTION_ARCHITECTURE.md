@@ -1,140 +1,140 @@
-# Secure File Attachment Solution for Bürokratt
+# Turvaline manuste lahendus Bürokratile
 
-## Executive Summary
+## Täitev ülevaade
 
-This document describes a comprehensive, secure file attachment handling solution designed specifically for the Bürokstack architecture using Ruuter DSL orchestration.
+See dokument kirjeldab kõikehõlmavat, turvalist manuste haldamise lahendust, mis on spetsiaalselt loodud Bürokstacki arhitektuurile kasutades Ruuteri DSL orkestreerimist.
 
-## Architecture Overview
+## Arhitektuuri ülevaade
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                         Client Application                          │
-│                    (Chat Widget, Backoffice GUI)                    │
+│                         Kliendirakendus                            │
+│                    (Vestlusvidin, Backoffice GUI)                  │
 └─────────────────────────────┬───────────────────────────────────────┘
                               │
                               │ HTTPS (multipart/form-data)
                               ▼
 ┌─────────────────────────────────────────────────────────────────────┐
-│                         Ruuter Router                               │
-│  (DSL: validate-file → scan-virus → upload-s3 → create-record)      │
+│                         Ruuteri ruuter                             │
+│  (DSL: validate-file → scan-virus → upload-s3 → create-record)     │
 └───────────────────┬───────────────────────────┬─────────────────────┘
                     │                           │
                     │                           │
         ┌───────────▼──────────┐   ┌────────────▼──────────────────┐
-        │  File Handler Service│   │      S3-Ferry Service         │
-        │  (Validation Logic)  │   │   (Storage Abstraction)       │
+        │  Failihandleri teenus│   │      S3-Ferry teenus         │
+        │  (Valideerimisloogika)│   │   (Salvestuse abstraktsioon) │
         └───────────┬──────────┘   └───────────┬───────────────────┘
                     │                          │
                     │                          │
         ┌───────────▼──────────┐   ┌───────────▼────────────────────┐
-        │  ClamAV Scanner      │   │  S3-Compatible Storage         │
-        │  (Virus Scanning)    │   │  (MinIO/AWS S3/Azure Blob)     │
+        │  ClamAVi skänner     │   │  S3-ühilduv salvestus         │
+        │  (Viiruseotsing)     │   │  (MinIO/AWS S3/Azure Blob)    │
         └──────────────────────┘   └────────────────────────────────┘
 
                     │
                     ▼
         ┌───────────────────────┐
-        │  Resql Database       │
-        │  (File Metadata)      │
+        │  Resqli andmebaas      │
+        │  (Faili metaandmed)    │
         └───────────────────────┘
 ```
 
-## Core Components
+## Põhikomponendid
 
-### 1. File Handler Service (`file-handler`)
+### 1. Failihandleri teenus (`file-handler`)
 
-**Purpose**: Central service for file validation, security checks, and upload orchestration.
+**Eesmärk**: Keskne teenus faili valideerimiseks, turvakontrollideks ja üleslaadimise orkestreerimiseks.
 
-**Technology Stack**:
-- Node.js with NestJS (matches S3-Ferry architecture)
-- TypeScript for type safety
-- Multer for multipart upload handling
-- ClamAV for virus scanning
-- AWS S3 SDK for storage operations
+**Tehnoloogiakomplekt**:
+- Node.js koos NestJS-ga (vastab S3-Ferry arhitektuurile)
+- TypeScript tüübitohutuse tagamiseks
+- Multer mitmeosalise üleslaadimise käsitlemiseks
+- ClamAV viiruseotsinguks
+- AWS S3 SDK salvestusoperatsioonideks
 
-**Key Features**:
-- MIME type validation (whitelist-based)
-- File size limits (configurable per file type)
-- Virus scanning integration
-- Chunked upload support for large files
-- Signed URL generation for secure access
-- Audit logging for all operations
+**Peamised funktsioonid**:
+- MIME tüübi valideerimine (lubatud loendi põhjal)
+- Faili suuruse piirangud (seadistatav faili tüübi kaupa)
+- Viiruseotsingu integratsioon
+- Tükkides üleslaadimise tugi suurtele failidele
+- Allkirjastatud URLide genereerimine turvaliseks juurdepääsuks
+- Auditilogimine kõigile operatsioonidele
 
-### 2. Ruuter DSL Workflows
+### 2. Ruuteri DSL töövoogud
 
-**DSL Files**:
-- `POST/files/upload.yml` - Main upload workflow
-- `POST/files/validate.yml` - Validation workflow
-- `POST/files/scan.yml` - Virus scanning workflow
-- `GET/files/download.yml` - Secure download with signed URLs
-- `POST/files/delete.yml` - File deletion workflow
+**DSL failid**:
+- `POST/files/upload.yml` - Peamine üleslaadimise töövoog
+- `POST/files/validate.yml` - Valideerimise töövoog
+- `POST/files/scan.yml` - Viiruseotsingu töövoog
+- `GET/files/download.yml` - Turvaline allalaadimine allkirjastatud URL-idega
+- `POST/files/delete.yml` - Faili kustutamise töövoog
 
-### 3. Storage Layer
+### 3. Salvestuskiht
 
-**S3-Ferry Integration**:
-- Reuses existing S3-Ferry service for multi-cloud compatibility
-- Supports MinIO (on-premises), AWS S3, and Azure Blob Storage
-- Implements S3 Lifecycle Policies for automatic cleanup
-- Multipart upload for files > 100MB
-- Server-side encryption (SSE-S3 or SSE-KMS)
+**S3-Ferry integratsioon**:
+- Kasutab olemasolevat S3-Ferry teenust mitmupilve ühilduvuseks
+- Toetab MinIO-d (kohapeal), AWS S3-d ja Azure Blob Storage'i
+- Realiseerib S3 elutsükli poliitikad automaatseks koristamiseks
+- Mitmeosaline üleslaadimine failide jaoks > 100MB
+- Serveripoolne krüptimine (SSE-S3 või SSE-KMS)
 
-### 4. Security Measures
+### 4. Turvameetmed
 
-#### 4.1 File Validation
-- **MIME Type Whitelist**: Only allowed types accepted
-- **Magic Number Verification**: Binary signature verification
-- **File Size Limits**: Configurable per MIME type
-- **Filename Sanitization**: Prevent path traversal attacks
+#### 4.1 Faili valideerimine
+- **MIME tüübi lubatud loend**: Ainult lubatud tüübid aktsepteeritakse
+- **Maagiliste numbrite kinnitamine**: Binaarse allkirja verifitseerimine
+- **Faili suuruse piirangud**: Seadistatav MIME tüübi kaupa
+- **Failinime puhastamine**: Rännaku rünnakute ennetus
 
-#### 4.2 Virus Scanning
-- **ClamAV Integration**: Open-source antivirus engine
-- **Async Scanning**: Non-blocking scan queue
-- **Quarantine**: Infected files isolated automatically
-- **Scan Results**: Stored in database for audit
+#### 4.2 Viiruseotsing
+- **ClamAV integratsioon**: Avatud lähtekoodiga antivirusmootor
+- **Asünkroonne skaneerimine**: Blokeerimatu skaneerimisjärjekord
+- **Karantiin**: Nakatunud failid isoleeritakse automaatselt
+- **Skaneri tulemused**: Salvestatud andmebaasi auditi jaoks
 
-#### 4.3 Access Control
-- **JWT Authentication**: Required for all operations
-- **TIM Integration**: User identity verification
-- **Signed URLs**: Time-limited access tokens
-- **Role-Based Access**: Different permissions per user role
+#### 4.3 Juurdepääsu kontroll
+- **JWT autentimine**: Nõutav kõigis operatsioonides
+- **TIM integratsioon**: Kasutaja identiteedi verifitseerimine
+- **Allkirjastatud URL-id**: Ajapiiranguga juurdepääsuload
+- **Rollipõhine juurdepääs**: Erinevad õigused kasutajarolli kaupa
 
-#### 4.4 Rate Limiting
-- **Per-User Limits**: Prevent abuse
-- **Flow Control**: Token bucket algorithm
-- **IP-Based Throttling**: DDoS protection
+#### 4.4 Kiiruspiirang
+- **Kasutajapõhised piirangud**: Kuritarvitamise ennetus
+- **Voo kontroll**: Token ämbri algoritm
+- **IP-põhine piiramine**: DDoS kaitse
 
-## Standards and Protocols
+## Standardid ja protokollid
 
-### MIME Types
-Supported file types with validation:
-- Documents: `.pdf`, `.docx`, `.doc`, `.odt`, `.rtf`
-- Images: `.jpg`, `.jpeg`, `.png`, `.gif`, `.webp`
-- Archives: `.zip`, `.tar`, `.gz` (with size limits)
-- Data: `.json`, `.xml`, `.csv`
+### MIME tüübid
+Toetatud failitüübid valideerimisega:
+- Dokumendid: `.pdf`, `.docx`, `.doc`, `.odt`, `.rtf`
+- Pildid: `.jpg`, `.jpeg`, `.png`, `.gif`, `.webp`
+- Arhiivid: `.zip`, `.tar`, `.gz` (suurusepiirangutega)
+- Andmed: `.json`, `.xml`, `.csv`
 
-### S3 API Standards
-- **Multipart Upload**: For files > 100MB
-- **Presigned URLs**: AWS Signature V4
-- **Versioning**: Enabled for file history
-- **Lifecycle Rules**: Automatic archive/delete
+### S3 API standardid
+- **Mitmeosaline üleslaadimine**: Failide jaoks > 100MB
+- **Eel-allkirjastatud URL-id**: AWS Signature V4
+- **Versioonimine**: Lubatud faili ajaloole
+- **Elutsükli reeglid**: Automaatne arhiveerimine/kustutamine
 
-### File Size Limits
-- Default: 50MB per file
-- Max: 500MB (configurable)
-- Chunk size: 5MB for multipart uploads
+### Faili suuruse piirangud
+- Vaikimisi: 50MB faili kohta
+- Maksimaalselt: 500MB (seadistatav)
+- Tüki suurus: 5MB mitmeosalise üleslaadimise korral
 
-## Integration with Existing Architecture
+## Integratsioon olemasoleva arhitektuuriga
 
-### Ruuter DSL Integration
+### Ruuteri DSL integratsioon
 
-The solution follows Ruuter's DSL patterns:
+Lahendus järgib Ruuteri DSL mustreid:
 
 ```yaml
-# File upload DSL example
+# Faili üleslaadimise DSL näide
 declare:
   call: declare
   version: 1.0.0
-  description: Upload file with validation and virus scanning
+  description: Laadi fail üles valideerimise ja viiruseotsinguga
   method: post
   accepts: file
   returns: json
@@ -143,34 +143,34 @@ declare:
     body:
     - field: file
       type: file
-      description: File to upload
+      description: Fail üleslaadimiseks
     - field: chatId
       type: string
-      description: Associated chat session ID
+      description: Seotud vestluse sessiooni ID
 
 validate_file:
   call: http.post
   args:
     url: "[#FILE_HANDLER]/validate"
-    # ... validation logic
+    # ... valideerimisloogika
   next: scan_file
 
 scan_file:
   call: http.post
   args:
     url: "[#FILE_HANDLER]/scan"
-    # ... virus scanning
+    # ... viiruseotsing
   next: upload_to_s3
 
 upload_to_s3:
   call: http.post
   args:
     url: "[#S3_FERRY]/v1/files/create"
-    # ... upload logic
+    # ... üleslaadimise loogika
   next: create_record
 ```
 
-### Database Schema (Resql)
+### Andmebaasi skeem (Resql)
 
 ```sql
 CREATE TABLE file_attachments (
@@ -200,128 +200,128 @@ CREATE INDEX idx_file_attachments_uploaded_by ON file_attachments(uploaded_by);
 CREATE INDEX idx_file_attachments_scan_status ON file_attachments(scan_status);
 ```
 
-## Deployment Architecture
+## Juurutamise arhitektuur
 
-### Kubernetes Components
+### Kubernetesi komponendid
 
-1. **file-handler Deployment**:
-   - Replicas: 3 (horizontal scaling)
-   - Resources: CPU 500m, Memory 512Mi
-   - Probes: Liveness and readiness
+1. **file-handleri juurutamine**:
+   - Replikad: 3 (horisontaalne skaleerimine)
+   - Ressursid: CPU 500m, Mälu 512Mi
+   - Sondid: Elusolek ja valmidus
 
-2. **clamav Deployment**:
-   - DaemonSet for scanning
-   - Freshclam sidecar for virus database updates
+2. **clamavi juurutamine**:
+   - DaemonSet skaneerimiseks
+   - Freshclam kõrvalprotsess viiruseandmebaasi uuendusteks
 
-3. **Secrets**:
-   - S3 credentials
-   - JWT signing keys
-   - Database credentials
+3. **Saladused**:
+   - S3 mandaadid
+   - JWT allkirjastamise võtmed
+   - Andmebaasi mandaadid
 
-4. **ConfigMaps**:
-   - MIME type whitelist
-   - File size limits
-   - Rate limiting rules
+4. **Konfiguratsioonikaardid**:
+   - MIME tüübi lubatud loend
+   - Faili suuruse piirangud
+   - Kiiruspiirangu reeglid
 
-## Security Best Practices
+## Turvalisuse parimad praktikad
 
-### 1. Defense in Depth
-- Multiple validation layers
-- Virus scanning at multiple stages
-- Network isolation (private cluster communication)
-- Secrets management with Kubernetes Secrets
+### 1. Kaitse sügavuses
+- Mitu valideerimiskihti
+- Viiruseotsing mitmes etapis
+- Võrgu isoleerimine (privaatne klasterkommunikatsioon)
+- Saladuste haldamine Kubernetesi Secretidega
 
-### 2. Principle of Least Privilege
-- Minimal S3 permissions (write-only for upload)
-- Role-based access control
-- Time-limited signed URLs
+### 2. Väikseima õiguse põhimõte
+- Minimaalsed S3 õigused (kirjutamisõigus ainult üleslaadimiseks)
+- Rollipõhine juurdepääsu kontroll
+- Ajapiiranguga allkirjastatud URL-id
 
-### 3. Audit and Monitoring
-- All file operations logged
-- Scan results tracked
-- Access patterns monitored
-- Alerts on suspicious activity
+### 3. Audit ja monitooring
+- Kõik failioperatsioonid logitud
+- Skaneerimistulemused jälgitavad
+- Juurdepääsu mustrad monitoreeritakse
+- Häired kahtlastest tegevustest
 
-### 4. Data Protection
-- Encryption in transit (TLS 1.3)
-- Encryption at rest (S3 SSE)
-- PII scanning with Presidio (optional)
-- GDPR compliance considerations
+### 4. Andmekaitse
+- Krüptimine ülekandel (TLS 1.3)
+- Krüptimine puhkeral (S3 SSE)
+- PII skaneerimine Presidioga (valikuline)
+- GDPR-õppuskäsitluse arvestused
 
-## Performance Considerations
+## Jõudluskalutused
 
-### Scalability
-- Stateless file-handler service
-- Horizontal pod autoscaling (2-10 replicas)
-- S3 handles unlimited storage
-- Async virus scanning queue
+### Skaleeritavus
+- Olekuta failihandleri teenus
+- Horisontaalne podi automaatne skaleerimine (2-10 replikat)
+- S3 hooldab piiramatut salvestust
+- Asünkroonne viiruseotsingu järjekord
 
-### Reliability
-- Multipart upload with retry
-- Circuit breaker for S3-Ferry
-- Graceful degradation (scan queue full)
-- Health checks and auto-restart
+### Usaldusväärsus
+- Mitmeosaline üleslaadimine uuestikatsemisega
+- Katkestaja S3-Ferry jaoks
+   graceful degradation (scan queue full)
+- Töökorras kontrollid ja automaatne taaskäivitus
 
-### Cost Optimization
-- S3 lifecycle policies (move to Glacier after 90 days)
-- Automatic cleanup of expired files
-- Efficient chunk size (5MB)
-- CDN caching for static assets
+### Kulude optimeerimine
+- S3 elutsükli poliitikad (liiguta Glacierisse pärast 90 päeva)
+- Aegunud failide automaatne koristamine
+- Tõhus tüki suurus (5MB)
+- CDN vahemälu staatiliste varade jaoks
 
-## Compliance and Standards
+## Järgimine ja standardid
 
 ### ISO 27001
-- Risk assessment for file handling
-- Security policies documented
-- Incident response procedures
+- Riskihinnang failide käitlemisele
+- Turvalisuse poliitikad dokumenteeritud
+- Intsidendi reageerimisprotseduurid
 
 ### GDPR
-- Data minimization (only required metadata)
-- Right to deletion
-- Data portability (export functionality)
-- Consent tracking
+- Andmete minimeerimine (ainult vajalikud metaandmed)
+- Õigus kustutamisele
+- Andmete portatiivsus (eksportimisfunktsioon)
+- Nõusoleku jälgimine
 
-### Estonian Information System Security
-- X-Road compatibility (optional)
-- Estonian ID card integration
-- Digital signature support
+### Eesti infosüsteemi turvalisus
+- X-Roadi ühilduvus (valikuline)
+- Eesti ID-kaardi integratsioon
+- Digitaalallkirja tugi
 
-## Testing Strategy
+## Testimise strateegia
 
-### Unit Tests
-- MIME type validation
-- File size checks
-- Filename sanitization
-- Signed URL generation
+### Ühiktestid
+- MIME tüübi valideerimine
+- Faili suuruse kontrollid
+- Failinime puhastamine
+- Allkirjastatud URLide genereerimine
 
-### Integration Tests
-- S3-Ferry integration
-- ClamAV scanning
-- Ruuter DSL execution
-- Database operations
+### Integratsioonitestid
+- S3-Ferry integratsioon
+- ClamAV skaneerimine
+- Ruuteri DSL täitmine
+- Andmebaasi operatsioonid
 
-### E2E Tests
-- Full upload workflow
-- Virus detection and quarantine
-- Download with signed URLs
-- Cleanup and expiration
+### Läbimõeldud testid
+- Täielik üleslaadimise töövoog
+- Viiruse tuvastamine ja karantiin
+- Allalaadimine allkirjastatud URL-idega
+- Koristamine ja aegumine
 
-## Monitoring and Observability
+## Monitooring ja jälgitavus
 
-### Metrics
-- Upload success rate
-- Virus detection rate
-- Storage utilization
-- API response times
+### Metrikad
+- Üleslaadimise edukus
+- Viiruse tuvastamise määr
+- Salvestusruumi kasutus
+- API reaktsiooniahel
 
-### Logging
-- Structured JSON logs
-- Correlation IDs (trace requests)
-- Error tracking
-- Audit trail
+### Logimine
+- Struktureeritud JSON-logid
+- Korrelatsiooni-ID-d (jälgita päringuid)
+- Veajälgimine
+- Auditiprott
 
-### Alerts
-- High virus detection rate
-- S3 upload failures
-- Disk space low
-- API errors > 5%
+### Häired
+- Kõrge viiruse tuvastamise määr
+- S3 üleslaadimise ebaõnnestumised
+- Vähe kettaruumi
+- API vead > 5%

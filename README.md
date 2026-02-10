@@ -1,133 +1,132 @@
-# Secure File Attachment Solution for Bürokratt
+# Turvaline manuste lahendus Bürokratile
 
-## Overview
+## Ülevaade
 
-This solution provides a comprehensive, secure, and scalable file attachment handling system specifically designed for the Bürokstack architecture. It implements enterprise-grade security features including virus scanning, file validation, S3-compatible storage, and seamless integration with Ruuter DSL workflows.
+See lahendus pakub kõikehõlmavat, turvalist ja skaleeritavat manuste haldamissüsteemi, mis on spetsiaalselt loodud Bürokstacki arhitektuurile. See realiseerib ettevõtteklassi turvalisuse omadused, sealhulgas viiruseotsingu, faili valideerimise, S3-ühilduva salvestuse ja sujuva integratsiooni Ruuteri DSL töövoogudega.
 
-## Key Features
+## Peamised funktsioonid
 
-✅ **Security First**
-- MIME type validation with magic number verification
-- ClamAV virus scanning with quarantine
-- Signed URLs for secure file access
-- JWT authentication integration
-- Role-based access control
-- Comprehensive audit logging
+✅ **Turvalisus esikohal**
+- MIME tüübi valideerimine koos maagiliste numbrite kontrolliga
+- ClamAVi viiruseotsing koos karantiiniga
+- Allkirjastatud URL-id turvaliseks juurdepääsuks
+- JWT autentimise integratsioon
+- Rollipõhine juurdepääsu kontroll
+- Põhjalik auditilogimine
 
-✅ **Scalability**
-- Horizontal pod autoscaling (2-10 replicas)
-- Multipart upload for large files (>100MB)
-- S3-compatible storage (MinIO/AWS/Azure)
-- Async virus scanning queue
-- Stateless service design
+✅ **Skaleeritavus**
+- Horisontaalne podi automaatne skaleerimine (2-10 replikat)
+- Mitmeosaline üleslaadimine suurte failide jaoks (>100MB)
+- S3-ühilduv salvestus (MinIO/AWS/Azure)
+- Asünkroonne viiruseotsingu järjekord
+- Olekuta teenuse disain
 
-✅ **Bürokstack Integration**
-- Ruuter DSL workflows for file operations
-- S3-Ferry integration for storage abstraction
-- TIM (TARA) authentication support
-- OpenSearch audit logging
-- PostgreSQL metadata storage
+✅ **Bürokstacki integratsioon**
+- Ruuteri DSL töövoogud failioperatsioonideks
+- S3-Ferry integratsioon salvestuse abstraktsiooniks
+- TIMi (TARA) autentimise tugi
+- OpenSearchi auditilogimine
+- PostgreSQLi metaandmete salvestus
 
-✅ **Production Ready**
-- Kubernetes deployment manifests
-- Custom Resource Definitions (FilePolicy, FileAttachment)
-- Health checks and probes
-- Resource limits and HPA
-- Network policies and RBAC
-- Comprehensive monitoring
+✅ **Tootmisvalmis**
+- Kubernetesi juurutamismanifestid
+- Kohandatud ressursi definitsioonid (FilePolicy, FileAttachment)
+- Töökorras kontrollid ja sondid
+- Ressursipiirangud ja HPA
+- Võrgupoliitika ja RBAC
+- Põhjalik monitooring
 
-## Architecture
+## Arhitektuur
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                     Client Applications                     │
-│              (Chat Widget, Backoffice GUI)                  │
+│                     Kliendirakendused                       │
+│              (Vestlusvidin, Backoffice GUI)                  │
 └─────────────────────────┬───────────────────────────────────┘
                           │
                           ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                        Ruuter Router                        │
-│              (DSL: validate → scan → upload → store)        │
-└────────┬────────────────────────────────────────┬───────────┘
+│                        Ruuteri ruuter                       │
+│              (DSL: valideeri → skaneeri → laadi üles → salvesta)        └────────┬────────────────────────────────────────┬───────────┘
          │                                        │
          ▼                                        ▼
 ┌──────────────────────┐              ┌──────────────────────┐
-│   File Handler       │              │    S3-Ferry          │
-│   - Validation       │              │    - Storage         │
-│   - Virus Scan       │              │    - Abstraction     │
-│   - Upload Logic     │              │    - Multipart       │
+│   Failihandler       │              │    S3-Ferry          │
+│   - Valideerimine    │              │    - Salvestus       │
+│   - Viiruseotsing    │              │    - Abstraktsioon   │
+│   - Üleslaadimise loogika    │              │    - Multipart       │
 └────────┬─────────────┘              └──────────┬───────────┘
          │                                       │
          ▼                                       ▼
 ┌──────────────────────┐              ┌──────────────────────┐
-│      ClamAV          │              │   S3 Storage         │
-│   - Virus Scanning   │              │   - MinIO/AWS/Azure  │
-│   - Quarantine       │              │   - Lifecycle Policy │
+│      ClamAV          │              │   S3 Salvestus       │
+│   - Viiruseotsing    │              │   - MinIO/AWS/Azure  │
+│   - Karantiin        │              │   - Elutsükli poliitika │
 └──────────────────────┘              └──────────────────────┘
 
          │
          ▼
 ┌──────────────────────┐
 │   PostgreSQL         │
-│   - File Metadata    │
-│   - Audit Logs       │
+│   - Faili metaandmed │
+│   - Auditilogid      │
 └──────────────────────┘
 ```
 
-## Quick Start
+## Kiirstarter
 
-### Prerequisites
+### Eeltingimused
 
-- Kubernetes cluster (v1.24+)
-- kubectl configured
-- Existing Bürokratt deployment (Ruuter, TIM, Resql, S3-Ferry)
-- PostgreSQL database
-- S3-compatible storage
+- Kubernetesi klaster (v1.24+)
+- kubectl seadistatud
+- Olemasolev Bürokratti juurutamine (Ruuter, TIM, Resql, S3-Ferry)
+- PostgreSQLi andmebaas
+- S3-ühilduv salvestus
 
-### Installation
+### Paigaldamine
 
-1. **Apply CRDs**
+1. **Rakenda CRD-d**
    ```bash
    kubectl apply -f crd/filepolicy.crd.yaml
    kubectl apply -f crd/fileattachment.crd.yaml
    ```
 
-2. **Create Namespace**
+2. **Loo nimeruum**
    ```bash
    kubectl create namespace buerokratt-file-storage
    ```
 
-3. **Deploy Components**
+3. **Juuruta komponendid**
    ```bash
-   # Deploy ClamAV
+   # Juuruta ClamAV
    kubectl apply -f k8s/deployment-clamav.yaml -n buerokratt-file-storage
 
-   # Deploy File Handler
+   # Juuruta Failihandler
    kubectl apply -f k8s/ -n buerokratt-file-storage
    ```
 
-4. **Deploy DSLs to Ruuter**
+4. **Juuruta DSL-ud Ruuterisse**
    ```bash
    kubectl cp DSL/ $(kubectl get pod -l app=ruuter -n buerokratt -o jsonpath='{.items[0].metadata.name}'):/DSL/
    ```
 
-See [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) for detailed instructions.
+Üksikasjalikud juhised leiate [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) failist.
 
-## Usage
+## Kasutamine
 
-### Upload File via DSL
+### Laadi fail üles DSL-i kaudu
 
 ```yaml
-# POST /files/upload (Ruuter DSL)
+# POST /files/upload (Ruuteri DSL)
 - content: |
     curl -X POST \
       http://ruuter.buerokratt.ee/files/upload \
-      -H "Authorization: Bearer <jwt-token>" \
+      -H "Authorization: Bearer <jwt-loot>" \
       -F "file=@document.pdf" \
       -F "chatId=chat-123"
 ```
 
-### Validate File
+### Valideeri fail
 
 ```yaml
 # POST /files/validate
@@ -137,41 +136,41 @@ See [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) for detailed instructions.
       -F "file=@document.pdf"
 ```
 
-### Download File
+### Laadi fail alla
 
 ```yaml
 # GET /files/download?fileId=uuid
 - content: |
     curl -X GET \
       http://ruuter.buerokratt.ee/files/download?fileId=<uuid> \
-      -H "Authorization: Bearer <jwt-token>"
+      -H "Authorization: Bearer <jwt-loot>"
 ```
 
-## Security Features
+## Turvalisus
 
-### File Validation
-- **MIME Type Whitelist**: Only allowed types accepted
-- **Magic Number Verification**: Binary signature checking
-- **File Size Limits**: Configurable per category
-- **Filename Sanitization**: Path traversal prevention
+### Faili valideerimine
+- **MIME tüübi lubatud loend**: Ainult lubatud tüübid aktsepteeritakse
+- **Maagiliste numbrite kinnitamine**: Binaarse allkirja kontroll
+- **Faili suuruse piirangud**: Seadistatav kategooria kaupa
+- **Failinime puhastamine**: Rännaku ennetus
 
-### Virus Scanning
-- **ClamAV Integration**: Real-time scanning
-- **Async Processing**: Non-blocking queue
-- **Automatic Quarantine**: Infected files isolated
-- **Scan Results**: Stored in database for audit
+### Viiruseotsing
+- **ClamAVi integratsioon**: Reaalaja skaneerimine
+- **Asünkroonne töötlemine**: Blokeerimatu järjekord
+- **Automaatne karantiin**: Nakatunud failid isoleeritakse
+- **Skaneri tulemused**: Salvestatud andmebaasi auditi jaoks
 
-### Access Control
-- **JWT Authentication**: Required for all operations
-- **TIM Integration**: User identity verification
-- **Signed URLs**: Time-limited access tokens (1 hour default)
-- **Role-Based Access**: Different permissions per role
+### Juurdepääsu kontroll
+- **JWT autentimine**: Nõutav kõigis operatsioonides
+- **TIMi integratsioon**: Kasutaja identiteedi kinnitamine
+- **Allkirjastatud URL-id**: Ajapiiranguga juurdepääsuload (vaikimisi 1 tund)
+- **Rollipõhine juurdepääs**: Erinevad õigused rolli kaupa
 
-## Configuration
+## Seadistamine
 
-### File Policies
+### Failipoliitikad
 
-Use `FilePolicy` CRD to define security rules:
+Kasutage `FilePolicy` CRD-d turvareeglite määramiseks:
 
 ```yaml
 apiVersion: storage.buerokratt.ee/v1alpha1
@@ -195,28 +194,28 @@ spec:
       - official
 ```
 
-### Environment Variables
+### Keskkonnamuutujad
 
-Configure via `k8s/configmap-file-handler.yaml`:
+Seadistage `k8s/configmap-file-handler.yaml` kaudu:
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| S3_ENDPOINT_URL | S3 endpoint | http://minio:9000 |
-| S3_DATA_BUCKET_NAME | Bucket name | buerokratt-files |
-| MAX_FILE_SIZE | Max upload size | 500MB |
-| CHUNK_SIZE | Multipart chunk size | 5MB |
-| ENABLE_VIRUS_SCAN | Enable ClamAV | true |
-| RATE_LIMIT_MAX | Requests per minute | 100 |
+| Muutuja | Kirjeldus | Vaikimisi |
+|---------|----------|-----------|
+| S3_ENDPOINT_URL | S3 otspunkt | http://minio:9000 |
+| S3_DATA_BUCKET_NAME | Ämberi nimi | buerokratt-files |
+| MAX_FILE_SIZE | Maks üleslaadimise suurus | 500MB |
+| CHUNK_SIZE | Multiparti tüki suurus | 5MB |
+| ENABLE_VIRUS_SCAN | ClamAV lubamine | true |
+| RATE_LIMIT_MAX | Päringuid minutis | 100 |
 
-## Monitoring
+## Monitooring
 
-### Health Check
+### Töökorras kontroll
 
 ```bash
 curl http://file-handler:3000/health
 ```
 
-Response:
+Vastus:
 ```json
 {
   "status": "healthy",
@@ -228,75 +227,75 @@ Response:
 }
 ```
 
-### Logs
+### Logid
 
 ```bash
-# File Handler logs
+# Failihandleri logid
 kubectl logs -f -l app=file-handler -n buerokratt-file-storage
 
-# ClamAV logs
+# ClamAVi logid
 kubectl logs -f -l app=clamav -n buerokratt-file-storage
 ```
 
-## Documentation
+## Dokumentatsioon
 
-- **[SOLUTION_ARCHITECTURE.md](SOLUTION_ARCHITECTURE.md)**: Complete architecture overview
-- **[DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)**: Step-by-step deployment instructions
-- **[file-handler/README.md](file-handler/README.md)**: File Handler service documentation
+- **[SOLUTION_ARCHITECTURE.md](SOLUTION_ARCHITECTURE.md)**: Täielik arhitektuuri ülevaade
+- **[DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)**: Samm-sammulised juurutamisjuhised
+- **[file-handler/README.md](file-handler/README.md)**: Failihandleri teenuse dokumentatsioon
 
-## Standards and Protocols
+## Standardid ja protokollid
 
-### MIME Types Supported
-- **Documents**: PDF, DOCX, DOC, ODT, RTF
-- **Images**: JPG, PNG, GIF, WebP, SVG
-- **Archives**: ZIP, TAR, GZ (with size limits)
-- **Data**: JSON, XML, CSV
+### Toetatud MIME tüübid
+- **Dokumendid**: PDF, DOCX, DOC, ODT, RTF
+- **Pildid**: JPG, PNG, GIF, WebP, SVG
+- **Arhiivid**: ZIP, TAR, GZ (suurusepiirangutega)
+- **Andmed**: JSON, XML, CSV
 
-### S3 API Standards
-- Multipart upload for files > 100MB
-- Presigned URLs with AWS Signature V4
-- Server-side encryption (SSE-S3/SSE-KMS)
-- Lifecycle policies for automatic cleanup
+### S3 API standardid
+- Mitmeosaline üleslaadimine failide jaoks > 100MB
+- Eel-allkirjastatud URL-id AWS Signature V4-ga
+- Serveripoolne krüptimine (SSE-S3/SSE-KMS)
+- Elutsükli poliitikad automaatseks koristuseks
 
-### Security Standards
-- TLS 1.3 for encryption in transit
-- SHA-256 for file checksums
-- GDPR compliance considerations
-- ISO 27001 security best practices
+### Turvalisuse standardid
+- TLS 1.3 krüptimiseks ülekandel
+- SHA-256 faili kontrollsummade jaoks
+- GDPR-õppususkäsitluse arvestused
+- ISO 27001 turvalisuse parimad praktikad
 
-## Compliance
+## Järgimine
 
 ### GDPR
-- Data minimization (only required metadata)
-- Right to deletion (file + metadata)
-- Data portability (export functionality)
-- Consent tracking
+- Andmete minimeerimine (ainult vajalikud metaandmed)
+- Õigus kustutamisele (fail + metaandmed)
+- Andmete portatiivsus (eksportimisfunktsioon)
+- Nõusoleku jälgimine
 
-### Estonian Standards
-- X-Road compatibility (optional)
-- ID card integration (via TIM)
-- Digital signature support
+### Eesti standardid
+- X-Roadi ühilduvus (valikuline)
+- ID-kaardi integratsioon (TIMi kaudu)
+- Digitaalallkirja tugi
 
-## Support and Troubleshooting
+## Tugi ja probleemide lahendamine
 
-### Common Issues
+### Levinud probleemid
 
-1. **ClamAV Not Ready**: Check `kubectl get pods -l app=clamav`
-2. **S3 Connection Failed**: Verify S3-Ferry accessibility
-3. **Database Errors**: Check connection string and schema
+1. **ClamAV ei ole valmis**: Kontrollige `kubectl get pods -l app=clamav`
+2. **S3 ühendus ebaõnnestus**: Kontrollige S3-Ferry kättesaadavust
+3. **Andmebaasi vead**: Kontrollige ühendusstringi ja skeemi
 
-### Debug Mode
+### Silumisrežiim
 
-Enable debug logging:
+Lubage silumislogimine:
 ```bash
 kubectl edit configmap file-handler-config
-# Set: log-level: "debug"
+# Seadistage: log-level: "debug"
 kubectl rollout restart deployment/file-handler
 ```
 
-## Examples
+## Näited
 
-### Example 1: Upload Chat Attachment
+### Näide 1: Laadi vestlusmanus üles
 
 ```bash
 curl -X POST \
@@ -306,7 +305,7 @@ curl -X POST \
   -F "chatId=chat-session-123"
 ```
 
-Response:
+Vastus:
 ```json
 {
   "fileId": "uuid-1234-5678",
@@ -315,11 +314,11 @@ Response:
   "mimeType": "application/pdf",
   "scanStatus": "clean",
   "uploadedAt": "2025-02-09T12:00:00Z",
-  "message": "File uploaded successfully"
+  "message": "Fail üles laaditud edukalt"
 }
 ```
 
-### Example 2: Create File Policy
+### Näide 2: Loo failipoliitika
 
 ```bash
 kubectl apply -f - <<EOF

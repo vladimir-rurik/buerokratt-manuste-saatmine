@@ -1,74 +1,74 @@
-# File Attachment Solution - Deployment Guide
+# Manuste lahenduse juurutamisjuhis
 
-This guide provides step-by-step instructions for deploying the secure file attachment solution in Bürokratt.
+See juhis pakub samm-sammulised juhised turvalise manuste lahenduse juurutamiseks Bürokrattis.
 
-## Table of Contents
+## Sisukord
 
-1. [Prerequisites](#prerequisites)
-2. [Installation](#installation)
-3. [Configuration](#configuration)
-4. [Deployment](#deployment)
-5. [Testing](#testing)
-6. [Monitoring](#monitoring)
-7. [Troubleshooting](#troubleshooting)
+1. [Eeltingimused](#eeltingimused)
+2. [Paigaldamine](#paigaldamine)
+3. [Seadistamine](#seadistamine)
+4. [Juurutamine](#juurutamine)
+5. [Testimine](#testimine)
+6. [Monitooring](#monitooring)
+7. [Probleemide lahendamine](#probleemide-lahendamine)
 
-## Prerequisites
+## Eeltingimused
 
-### Required Components
+### Vajalikud komponendid
 
-- Kubernetes cluster (v1.24+)
-- kubectl configured
+- Kubernetesi klaster (v1.24+)
+- kubectl seadistatud
 - Helm 3.x
-- PostgreSQL database (existing Bürokratt deployment)
-- S3-compatible storage (MinIO/AWS S3/Azure Blob)
-- Existing S3-Ferry deployment
-- Existing TIM (identity management) deployment
-- Existing Ruuter deployment
+- PostgreSQLi andmebaas (olemasolev Bürokratti juurutamine)
+- S3-ühilduv salvestus (MinIO/AWS S3/Azure Blob)
+- Olemasolev S3-Ferry juurutamine
+- Olemasolev TIM (identiteedihaldus) juurutamine
+- Olemasolev Ruuteri juurutamine
 
-### Resource Requirements
+### Ressursinõuded
 
-- **File Handler**:
-  - CPU: 200m - 1000m per pod
-  - Memory: 256Mi - 512Mi per pod
-  - Replicas: 3-10 (auto-scaling)
+- **Failihandler**:
+  - CPU: 200m - 1000m podi kohta
+  - Mälu: 256Mi - 512Mi podi kohta
+  - Replikad: 3-10 (automaatne skaleerimine)
 
 - **ClamAV**:
-  - CPU: 500m - 2000m per pod
-  - Memory: 512Mi - 2Gi per pod
-  - Replicas: 1
+  - CPU: 500m - 2000m podi kohta
+  - Mälu: 512Mi - 2Gi podi kohta
+  - Replikad: 1
 
-- **Storage**: Depends on usage (recommended: 100GB+)
+- **Salvestus**: Sõltub kasutusest (soovitatav: 100GB+)
 
-## Installation
+## Paigaldamine
 
-### Step 1: Apply Custom Resource Definitions
+### 1. samm: Rakenda kohandatud ressursi definitsioonid
 
 ```bash
-# Apply FilePolicy CRD
+# Rakenda FilePolicy CRD
 kubectl apply -f crd/filepolicy.crd.yaml
 
-# Apply FileAttachment CRD
+# Rakenda FileAttachment CRD
 kubectl apply -f crd/fileattachment.crd.yaml
 
-# Verify CRDs are installed
+# Kinnita, et CRD-d on paigaldatud
 kubectl get crd | grep storage.buerokratt.ee
 ```
 
-### Step 2: Create Namespace
+### 2. samm: Loo nimeruum
 
 ```bash
 kubectl create namespace buerokratt-file-storage
 ```
 
-### Step 3: Create Secrets
+### 3. samm: Loo saladused
 
 ```bash
-# Generate secure passwords
+# Genereeri turvalised paroolid
 DB_PASSWORD=$(openssl rand -base64 32)
 S3_SECRET_KEY=$(openssl rand -base64 32)
 JWT_SECRET=$(openssl rand -base64 32)
 
-# Create secret
+# Loo salajane võti
 kubectl create secret generic file-handler-secrets \
   --from-literal=db-name=byk \
   --from-literal=db-user=byk \
@@ -79,33 +79,33 @@ kubectl create secret generic file-handler-secrets \
   --namespace=buerokratt-file-storage
 ```
 
-### Step 4: Apply Configuration
+### 4. samm: Rakenda konfiguratsioon
 
 ```bash
-# Apply ConfigMap
+# Rakenda ConfigMap
 kubectl apply -f k8s/configmap-file-handler.yaml \
   --namespace=buerokratt-file-storage
 
-# Edit ConfigMap for your environment
+# Redigeeri ConfigMap oma keskkonna jaoks
 kubectl edit configmap file-handler-config \
   --namespace=buerokratt-file-storage
 ```
 
-### Step 5: Deploy ClamAV
+### 5. samm: Juuruta ClamAV
 
 ```bash
 kubectl apply -f k8s/deployment-clamav.yaml \
   --namespace=buerokratt-file-storage
 
-# Wait for ClamAV to be ready
+# Oota, kuni ClamAV on valmis
 kubectl wait --for=condition=ready pod -l app=clamav \
   --namespace=buerokratt-file-storage --timeout=300s
 ```
 
-### Step 6: Deploy File Handler
+### 6. samm: Juuruta Failihandler
 
 ```bash
-# Apply all file-handler resources
+# Rakenda kõik failihandleri ressursid
 kubectl apply -f k8s/deployment-file-handler.yaml \
   --namespace=buerokratt-file-storage
 
@@ -118,78 +118,78 @@ kubectl apply -f k8s/hpa-file-handler.yaml \
 kubectl apply -f k8s/poddisruptionbudget-file-handler.yaml \
   --namespace=buerokratt-file-storage
 
-# Wait for deployment
+# Oota juurutamist
 kubectl wait --for=condition=available deployment/file-handler \
   --namespace=buerokratt-file-storage --timeout=300s
 ```
 
-### Step 7: Apply Ingress (optional)
+### 7. samm: Rakenda Ingress (valikuline)
 
 ```bash
-# Only if external access is needed
+# Ainult juhul, kui väline juurdepääs on vajalik
 kubectl apply -f k8s/ingress-file-handler.yaml \
   --namespace=buerokratt-file-storage
 ```
 
-### Step 8: Deploy DSL Files to Ruuter
+### 8. samm: Juuruta DSL failid Ruuterisse
 
 ```bash
-# Copy DSL files to Ruuter's DSL directory
+# Kopeeri DSL failid Ruuteri DSL kataloogi
 kubectl cp DSL/ \
   $(kubectl get pod -l app=ruuter -n buerokratt -o jsonpath='{.items[0].metadata.name}'):/DSL/ \
   --namespace=buerokratt
 
-# Reload Ruuter DSLs
+# Laadi Ruuteri DSL-id uuesti
 kubectl exec -n buerokratt \
   $(kubectl get pod -l app=ruuter -n buerokratt -o jsonpath='{.items[0].metadata.name}') \
   -- curl -X POST http://localhost:8080/reload-dsls
 ```
 
-### Step 9: Apply File Policies
+### 9. samm: Rakenda failipoliitikad
 
 ```bash
-# Apply default file policies
+# Rakenda vaikimisi failipoliitikad
 kubectl apply -f crd/filepolicy-example.yaml \
   --namespace=buerokratt-file-storage
 
-# Verify policies
+# Kontrolli poliitikaid
 kubectl get filepolicies --namespace=buerokratt-file-storage
 ```
 
-### Step 10: Create Database Schema
+### 10. samm: Loo andmebaasi skeem
 
 ```bash
-# Connect to PostgreSQL
+# Ühendu PostgreSQLiga
 kubectl exec -n buerokratt \
   $(kubectl get pod -l app=postgres -n buerokratt -o jsonpath='{.items[0].metadata.name}') \
   -- psql -U byk -d byk
 
-# Execute schema (from SOLUTION_ARCHITECTURE.md)
+# Käivita skeem (SOLUTION_ARCHITECTURE.md failist)
 \i file-attachments-schema.sql
 ```
 
-## Configuration
+## Seadistamine
 
-### Environment Variables
+### Keskkonnamuutujad
 
-Edit the `k8s/configmap-file-handler.yaml` to configure:
+Redigeeri `k8s/configmap-file-handler.yaml` seadistamiseks:
 
-- `s3-endpoint`: S3-compatible storage endpoint
-- `s3-bucket-name`: Bucket name for file storage
-- `max-file-size`: Maximum upload size
-- `rate-limit-max`: Requests per minute limit
+- `s3-endpoint`: S3-ühilduva salvestuse otspunkt
+- `s3-bucket-name`: Ämberi nimi faili salvestamiseks
+- `max-file-size`: Maksimaalne üleslaadimise suurus
+- `rate-limit-max`: Päringute piir minutis
 
-### File Policy Configuration
+### Failipoliitika seadistamine
 
-Apply custom `FilePolicy` resources to control:
+Rakenda kohandatud `FilePolicy` ressursid kontrollimaks:
 
-- Allowed MIME types
-- File size limits
-- Virus scanning requirements
-- Access control
-- Retention policies
+- Lubatud MIME tüübid
+- Faili suuruse piirangud
+- Viiruseotsingu nõuded
+- Juurdepääsu kontroll
+- Säilituspoliitikad
 
-Example:
+Näide:
 
 ```bash
 kubectl apply -f - <<EOF
@@ -211,27 +211,27 @@ spec:
 EOF
 ```
 
-## Deployment
+## Juurutamine
 
-### Verify Deployment
+### Kontrolli juurutamist
 
 ```bash
-# Check all pods are running
+# Kontrolli, kas kõik podid töötavad
 kubectl get pods --namespace=buerokratt-file-storage
 
-# Check services
+# Kontrolli teenuseid
 kubectl get svc --namespace=buerokratt-file-storage
 
-# Check HPA
+# Kontrolli HPA-d
 kubectl get hpa --namespace=buerokratt-file-storage
 
-# Check health
+# Kontrolli tervist
 kubectl exec -n buerokratt-file-storage \
   $(kubectl get pod -l app=file-handler -o jsonpath='{.items[0].metadata.name}') \
   -- curl http://localhost:3000/health
 ```
 
-### Expected Output
+### Oodatav väljund
 
 ```
 NAME                            READY   STATUS    RESTARTS   AGE
@@ -241,25 +241,25 @@ file-handler-6c8d9b7f4-def456   1/1     Running   0          3m
 file-handler-6c8d9b7f4-ghi789   1/1     Running   0          3m
 ```
 
-## Testing
+## Testimine
 
-### 1. Health Check
+### 1. Tervisekontroll
 
 ```bash
 curl http://file-handler.buerokratt-file-storage.svc.cluster.local:3000/health
 ```
 
-### 2. Upload File via Ruuter DSL
+### 2. Laadi fail üles Ruuteri DSL-i kaudu
 
 ```bash
 curl -X POST \
   http://ruuter.buerokratt.svc.cluster.local:8080/files/upload \
-  -H "Authorization: Bearer <jwt-token>" \
+  -H "Authorization: Bearer <jwt-loot>" \
   -F "file=@test-document.pdf" \
   -F "chatId=test-chat-123"
 ```
 
-### 3. Validate File
+### 3. Valideeri fail
 
 ```bash
 curl -X POST \
@@ -267,204 +267,193 @@ curl -X POST \
   -F "file=@test-document.pdf"
 ```
 
-### 4. Get File Metadata
+### 4. Hanki faili metaandmed
 
 ```bash
 curl -X GET \
   http://ruuter.buerokratt.svc.cluster.local:8080/files/download?fileId=<file-id> \
-  -H "Authorization: Bearer <jwt-token>"
+  -H "Authorization: Bearer <jwt-loot>"
 ```
 
-### 5. List File Attachments
+### 5. Loetle manused
 
 ```bash
 kubectl get fileattachments --namespace=buerokratt-file-storage
 ```
 
-## Monitoring
+## Monitooring
 
-### Metrics
+### Metrikad
 
-File Handler exposes metrics at `/metrics` (can be added with Prometheus adapter):
+Failihandler pakub meetrikaid `/metrics` otspunktis (saab lisada Prometheusi adapteriga):
 
-- Upload success rate
-- Virus detection rate
-- Storage utilization
-- API response times
+- Üleslaadimise edukus
+- Viiruse tuvastamise määr
+- Salvestusruumi kasutus
+- API reaktsiooniahel
 
-### Logging
+### Logimine
 
 ```bash
-# View file handler logs
+# Vaata failihandleri logisid
 kubectl logs -f -l app=file-handler --namespace=buerokratt-file-storage
 
-# View ClamAV logs
+# Vaata ClamAVi logisid
 kubectl logs -f -l app=clamav --namespace=buerokratt-file-storage
 ```
 
-### Alerts
+### Häired
 
-Configure Prometheus alerts for:
+Seadistake Prometheusi häired:
 
-- High virus detection rate (> 5%)
-- S3 upload failures (> 10% error rate)
-- Low disk space (< 20% free)
-- API latency > 5s (p95)
+- Kõrge viiruse tuvastamise määr (> 5%)
+- S3 üleslaadimise ebaõnnestumised (> 10% veamäär)
+- Vähe kettaruumi (< 20% vaba)
+- API latentsus > 5s (p95)
 
-## Troubleshooting
+## Probleemide lahendamine
 
-### Common Issues
+### Levinud probleemid
 
-#### 1. ClamAV Not Ready
+#### 1. ClamAV ei ole valmis
 
-**Symptom**: File handler logs show "ClamAV not initialized"
+**Sümptom**: Failihandleri logid näitavad "ClamAV not initialized"
 
-**Solution**:
+**Lahendus**:
 ```bash
-# Check ClamAV pod status
+# Kontrolli ClamAV podi olekut
 kubectl get pods -l app=clamav --namespace=buerokratt-file-storage
 
-# Check ClamAV logs
+# Kontrolli ClamAVi logisid
 kubectl logs -l app=clamav --namespace=buerokratt-file-storage
 
-# Restart ClamAV
+# Taaskäivita ClamAV
 kubectl rollout restart deployment/clamav --namespace=buerokratt-file-storage
 ```
 
-#### 2. S3 Connection Failed
+#### 2. S3 ühendus ebaõnnestus
 
-**Symptom**: "Failed to create file" errors
+**Sümptom**: "Failed to create file" vead
 
-**Solution**:
+**Lahendus**:
 ```bash
-# Verify S3-Ferry is accessible
+# Kontrolli S3-Ferry kättesaadavust
 kubectl exec -n buerokratt-file-storage \
   $(kubectl get pod -l app=file-handler -o jsonpath='{.items[0].metadata.name}') \
   -- curl http://s3-ferry:3000/v1/storage-accounts
 
-# Check S3 credentials
+# Kontrolli S3 mandaate
 kubectl get secret file-handler-secrets \
   --namespace=buerokratt-file-storage \
   --template={{.data.s3-access-key}} | base64 -d
 ```
 
-#### 3. Database Connection Errors
+#### 3. Andmebaasi ühenduse vead
 
-**Symptom**: "Failed to create file record"
+**Sümptom**: "Failed to create file record"
 
-**Solution**:
+**Lahendus**:
 ```bash
-# Check database connectivity
+# Kontrolli andmebaasi ühenduvust
 kubectl exec -n buerokratt-file-storage \
   $(kubectl get pod -l app=file-handler -o jsonpath='{.items[0].metadata.name}') \
   -- pg_isready -h postgres.buerokratt.svc.cluster.local -p 5432
 
-# Verify database schema
+# Kontrolli andmebaasi skeemi
 kubectl exec -n buerokratt postgres-0 \
   -- psql -U byk -d byk -c "\dt file_attachments"
 ```
 
-#### 4. High Memory Usage
+#### 4. Kõrge mälu kasutus
 
-**Symptom**: Pods getting OOMKilled
+**Sümptom**: Podid saavad OOMKilled
 
-**Solution**:
+**Lahendus**:
 ```bash
-# Increase memory limits
+# Suurenda mälu piiranguid
 kubectl edit deployment file-handler --namespace=buerokratt-file-storage
 
-# Or scale up replicas
+# Või skaleeri üles replikad
 kubectl scale deployment file-handler --replicas=5 --namespace=buerokratt-file-storage
 ```
 
-### Debug Mode
+### Silumisrežiim
 
-Enable debug logging:
+Luba silumislogimine:
 
 ```bash
 kubectl edit configmap file-handler-config --namespace=buerokratt-file-storage
 
-# Set: log-level: "debug"
+# Seadistage: log-level: "debug"
 
-# Restart pods
+# Taaskäivita podid
 kubectl rollout restart deployment/file-handler --namespace=buerokratt-file-storage
 ```
 
-## Security Considerations
+## Turvalisuskalutused
 
-### Production Checklist
 
-- [ ] Change all default passwords
-- [ ] Enable TLS for all services
-- [ ] Configure network policies
-- [ ] Enable pod security policies
-- [ ] Set up RBAC correctly
-- [ ] Enable audit logging
-- [ ] Configure backup strategy
-- [ ] Set up disaster recovery
-- [ ] Regular security updates
+### Võrgupoliitikad
 
-### Network Policies
-
-Apply network policies to restrict traffic:
+Rakenda võrgupoliitikad liikluse piiramiseks:
 
 ```bash
 kubectl apply -f k8s/network-policy.yaml
 ```
 
-## Backup and Recovery
+## Varundamine ja taastamine
 
-### Database Backup
+### Andmebaasi varundamine
 
 ```bash
-# Backup file attachments metadata
+# Varunda manuste metaandmed
 kubectl exec -n buerokratt postgres-0 -- \
   pg_dump -U byk -d byk -t file_attachments > file_attachments_backup.sql
 ```
 
-### Storage Backup
+### Salvestuse varundamine
 
-Configure S3 versioning and lifecycle policies for automatic backup.
+Seadistage S3 versioonimine ja elutsükli poliitikad automaatseks varundamiseks.
 
-## Upgrades
+## Uuendused
 
-### Rolling Upgrade
+### Rolliv uuendus
 
 ```bash
-# Update image
+# Uuenda pilti
 kubectl set image deployment/file-handler \
   file-handler=ghcr.io/buerokratt/file-handler:1.1.0 \
   --namespace=buerokratt-file-storage
 
-# Monitor rollout
+# Monitoeri rollimist
 kubectl rollout status deployment/file-handler --namespace=buerokratt-file-storage
 ```
 
-### Rollback
+### Tagasivõtmine
 
 ```bash
 kubectl rollout undo deployment/file-handler --namespace=buerokratt-file-storage
 ```
 
-## Support
+## Tugi
 
-For issues or questions:
+Probleemide korral:
 
-1. Check logs: `kubectl logs -l app=file-handler --namespace=buerokratt-file-storage`
-2. Check health: `kubectl get pods --namespace=buerokratt-file-storage`
-3. Review this guide
-4. Check SOLUTION_ARCHITECTURE.md for design details
+1. Kontrolli logisid: `kubectl logs -l app=file-handler --namespace=buerokratt-file-storage`
+2. Kontrolli tervist: `kubectl get pods --namespace=buerokratt-file-storage`
+3. Vaadake seda juhendit
+4. Kontrollige SOLUTION_ARCHITECTURE.md disaini detailide jaoks
 
-## Appendix
+## Lisad
 
-### A. Complete File List
+### A. Täielik faililoetelu
 
 ```
 File-Storage/
-├── SOLUTION_ARCHITECTURE.md          # Architecture documentation
-├── DEPLOYMENT_GUIDE.md               # This file
-├── README.md                         # Project overview
-├── file-handler/                     # File Handler service
+├── SOLUTION_ARCHITECTURE.md          # Arhitektuuri dokumentatsioon
+├── DEPLOYMENT_GUIDE.md               # See fail
+├── README.md                         # Projekti ülevaade
+├── file-handler/                     # Failihandleri teenus
 │   ├── src/
 │   │   ├── main.ts
 │   │   ├── app.module.ts
@@ -478,7 +467,7 @@ File-Storage/
 │   ├── tsconfig.json
 │   ├── Dockerfile
 │   └── .env.example
-├── DSL/                              # Ruuter DSL workflows
+├── DSL/                              # Ruuteri DSL töövoogud
 │   ├── POST/
 │   │   └── files/
 │   │       ├── upload.yml
@@ -487,7 +476,7 @@ File-Storage/
 │   └── GET/
 │       └── files/
 │           └── download.yml
-├── k8s/                              # Kubernetes manifests
+├── k8s/                              # Kubernetesi manifestid
 │   ├── deployment-file-handler.yaml
 │   ├── service-file-handler.yaml
 │   ├── deployment-clamav.yaml
@@ -496,27 +485,26 @@ File-Storage/
 │   ├── hpa-file-handler.yaml
 │   ├── poddisruptionbudget-file-handler.yaml
 │   └── ingress-file-handler.yaml
-└── crd/                              # Custom Resources
+└── crd/                              # Kohandatud ressursid
     ├── filepolicy.crd.yaml
     ├── filepolicy-example.yaml
     ├── fileattachment.crd.yaml
     └── fileattachment-example.yaml
 ```
 
-### B. Port Reference
+### B. Pordi viide
 
-| Service | Port | Protocol | Description |
-|---------|------|----------|-------------|
-| file-handler | 3000 | HTTP | API endpoint |
-| clamav | 3310 | TCP | Virus scanning |
-| postgres | 5432 | TCP | Database |
-| s3-ferry | 3000 | HTTP | Storage service |
-| ruuter | 8080 | HTTP | DSL router |
+| Teenus | Port | Protokoll | Kirjeldus |
+|---------|------|----------|-----------|
+| file-handler | 3000 | HTTP | API otspunkt |
+| clamav | 3310 | TCP | Viiruseotsing |
+| postgres | 5432 | TCP | Andmebaas |
+| s3-ferry | 3000 | HTTP | Salvestusteenus |
+| ruuter | 8080 | HTTP | DSL ruuter |
 
-### C. Default Resource Limits
+### C. Vaikimisi ressursi piirangud
 
-| Component | CPU Request | CPU Limit | Memory Request | Memory Limit |
-|-----------|-------------|-----------|----------------|--------------|
+| Komponent | CPU taotlus | CPU piirang | Mälu taotlus | Mälu piirang |
+|-----------|-------------|-----------|--------------|--------------|
 | file-handler | 200m | 1000m | 256Mi | 512Mi |
 | clamav | 500m | 2000m | 512Mi | 2Gi |
-

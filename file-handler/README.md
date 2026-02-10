@@ -1,161 +1,161 @@
-# File Handler Service
+# Failihaldusteenus
 
-Secure file attachment handling service for Bürokratt with validation, virus scanning, and S3-compatible storage.
+Turvaline manuste haldamisteenus Bürokratti jaoks, millel on valideerimine, viiruseotsing ja S3-ühilduv salvestus.
 
-## Features
+## Funktsioonid
 
-- **File Validation**: MIME type verification, magic number checking, size limits
-- **Virus Scanning**: ClamAV integration for malware detection
-- **Secure Storage**: S3-compatible storage via S3-Ferry service
-- **Multipart Upload**: Support for large files (>100MB)
-- **Signed URLs**: Time-limited secure access tokens
-- **Rate Limiting**: Per-user throttling (configurable)
-- **Audit Logging**: Complete operation tracking
-- **Kubernetes Ready**: Deployment manifests included
+- **Faili valideerimine**: MIME tüübi kontroll, maagiliste numbrite kontroll, suusepiirangud
+- **Viiruseotsing**: ClamAVi integratsioon pahavara tuvastamiseks
+- **Turvaline salvestus**: S3-ühilduv salvestus S3-Ferry teenuse kaudu
+- **Osaline üleslaadimine**: Suurte failide tugi (>100MB)
+- **Allkirjastatud URL-id**: Ajapiiranguga turvalised juurdepääsuload
+- **Kiiruspiirang**: Kasutajapõhine piiramine (seadistatav)
+- **Auditilogimine: Täielik tegevuste jälgimine
+- **Kubernetes-valmis**: Kaasatud juurutamismanifestid
 
-## Technology Stack
+## Tehnoloogiad
 
-- **Framework**: NestJS with TypeScript
-- **Storage**: AWS S3 SDK (via S3-Ferry)
-- **Virus Scanning**: ClamAV
-- **Database**: PostgreSQL
-- **Documentation**: Swagger/OpenAPI
+- **Raamistik**: NestTypeScriptiga
+- **Salvestus**: AWS S3 SDK (S3-Ferry kaudu)
+- **Viiruseotsing**: ClamAV
+- **Andmebaas**: PostgreSQL
+- **Dokumentatsioon**: Swagger/OpenAPI
 
-## Prerequisites
+## Eeltingimused
 
 - Node.js 20+
 - PostgreSQL 14+
 - ClamAV (clamd)
-- S3-compatible storage (MinIO/AWS S3/Azure Blob)
-- S3-Ferry service
+- S3-ühilduv salvestus (MinIO/AWS S3/Azure Blob)
+- S3-Ferry teenus
 
-## Development
+## Arendus
 
-### Installation
+### Paigaldamine
 
 ```bash
 npm install
 ```
 
-### Configuration
+### Seadistamine
 
-Copy `.env.example` to `.env` and configure:
+Kopeeri `.env.example` fail `.env` ning seadista:
 
 ```bash
 cp .env.example .env
 ```
 
-### Running Locally
+### Kohalik käivitamine
 
 ```bash
-# Development mode with hot reload
+# Arendusrežiim koos kuumaloadiga
 npm run start:dev
 
-# Production mode
+# Tootmisrežiim
 npm run build
 npm run start:prod
 ```
 
-### Running Tests
+### Testide käivitamine
 
 ```bash
-# Unit tests
+# Ühiktestid
 npm run test
 
-# E2E tests
+# Läbimõeldud testid
 npm run test:e2e
 
-# Coverage
+# Kate
 npm run test:cov
 ```
 
-### Linting
+### Koodikontroll
 
 ```bash
-# Run linter
+# Linteri käivitamine
 npm run lint
 
-# Auto-fix issues
+# Automaatne parandus
 npm run lint:fix
 ```
 
-## API Documentation
+## API dokumentatsioon
 
-Once running, access Swagger documentation at:
+Pärast käivitamist on Swaggeri dokumentatsioon kättesaadav:
 ```
 http://localhost:3000/documentation
 ```
 
-## API Endpoints
+## API otspunktid
 
-### Upload File
+### Faili üleslaadimine
 ```http
 POST /v1/files/upload
 Content-Type: multipart/form-data
 
 {
-  "file": <binary>,
-  "chatId": "optional-chat-id"
+  "file": <binaarne>,
+  "chatId": "valikuline-vestlus-id"
 }
 ```
 
-### Validate File (without upload)
+### Faili valideerimine (ilma üleslaadimiseta)
 ```http
 POST /v1/files/validate
 Content-Type: multipart/form-data
 
 {
-  "file": <binary>
+  "file": <binaarne>
 }
 ```
 
-### Get File Metadata
+### Faili metaandmete hankimine
 ```http
 GET /v1/files/:fileId
-Authorization: Bearer <jwt-token>
+Authorization: Bearer <jwt-loot>
 ```
 
-### Delete File
+### Faili kustutamine
 ```http
 DELETE /v1/files/:fileId
-Authorization: Bearer <jwt-token>
+Authorization: Bearer <jwt-loot>
 ```
 
-### Health Check
+### Töökorras kontroll
 ```http
 GET /v1/files/health
 ```
 
-## Security Features
+## Turvalisus
 
-### File Validation
-- MIME type whitelist
-- Magic number verification
-- File size limits
-- Filename sanitization
-- Path traversal prevention
+### Faili valideerimine
+- MIME tüübi lubatud loend
+- Maagiliste numbrite kinnitamine
+- Faili suuruse piirangud
+- Failinime puhastamine
+- Rännaku ennetus
 
-### Virus Scanning
-- ClamAV integration
-- Async scanning queue
-- Quarantine for infected files
-- Scan result logging
+### Viiruseotsing
+- ClamAVi integratsioon
+- Asünkroonne otsingujärjekord
+- Nakatunud failide karantiin
+- Otsingutulemuste logimine
 
-### Access Control
-- JWT authentication required
-- User permission checks
-- Signed URLs for downloads
-- Audit logging for all operations
+### Juurdepääsu kontroll
+- JWT autentimine nõutav
+- Kasutajaõiguste kontroll
+- Allkirjastatud URL-id allalaadimiseks
+- Auditilogimine kõikidele operatsioonidele
 
 ## Docker
 
-### Build Image
+### Dockeri pildi ehitamine
 
 ```bash
 docker build -t file-handler:latest .
 ```
 
-### Run Container
+### Konteineri käivitamine
 
 ```bash
 docker run -p 3000:3000 \
@@ -165,29 +165,28 @@ docker run -p 3000:3000 \
   file-handler:latest
 ```
 
-## Kubernetes Deployment
+## Kubernetesi juurutamine
 
-See `k8s/` directory for deployment manifests:
+Juurutamismanifestid on kataloogis `k8s/`:
 
 ```bash
 kubectl apply -f k8s/
 ```
 
-## Environment Variables
+## Keskkonnamuutujad
 
-See `.env.example` for all available configuration options.
+Kõik saadaolevad seadistamisvõimalused on failis `.env.example`.
 
-## Monitoring
+## Monitooring
 
-### Metrics
-- Upload success rate
-- Virus detection rate
-- Storage utilization
-- API response times
+### Metrikad
+- Üleslaadimise edukus
+- Viiruste tuvastamise määr
+- Salvestusruumi kasutus
+- API reaktsioonid
 
-### Logging
-- Structured JSON logs
-- Correlation IDs
-- Error tracking
-- Audit trail
-
+### Logimine
+- Struktureeritud JSON-logid
+- Korrelatsiooni-ID-d
+- Veajälgimine
+- Auditiprott
