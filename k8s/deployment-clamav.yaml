@@ -1,0 +1,91 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: clamav
+  labels:
+    app: clamav
+    component: virus-scanner
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: clamav
+  template:
+    metadata:
+      labels:
+        app: clamav
+        component: virus-scanner
+    spec:
+      containers:
+        - name: clamav
+          image: clamav/clamav:stable
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3310
+              name: clamd
+              protocol: TCP
+
+          env:
+            - name: CLAMAV_NO_CLAMD
+              value: "false"
+            - name: CLAMAV_NO_FRESHCLAMD
+              value: "false"
+
+          resources:
+            requests:
+              cpu: 500m
+              memory: 512Mi
+            limits:
+              cpu: 2000m
+              memory: 2Gi
+
+          livenessProbe:
+            tcpSocket:
+              port: 3310
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  clamdcheck.sh || exit 1
+                  clamscan --version || exit 1
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          volumeMounts:
+            - name: virus-db
+              mountPath: /var/lib/clamav
+            - name: tmp
+              mountPath: /tmp
+
+      volumes:
+        - name: virus-db
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: clamav
+  labels:
+    app: clamav
+    component: virus-scanner
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3310
+      targetPort: 3310
+      protocol: TCP
+      name: clamd
+  selector:
+    app: clamav

@@ -1,0 +1,159 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: file-handler
+  labels:
+    app: file-handler
+    component: file-storage
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: file-handler
+  template:
+    metadata:
+      labels:
+        app: file-handler
+        component: file-storage
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 1001
+
+      containers:
+        - name: file-handler
+          image: ghcr.io/buerokratt/file-handler:1.0.0
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+              name: http
+              protocol: TCP
+
+          env:
+            - name: NODE_ENV
+              value: "production"
+            - name: PORT
+              value: "3000"
+            - name: API_DOCUMENTATION_ENABLED
+              value: "true"
+            - name: API_CORS_ORIGIN
+              value: "https://test.buerokratt.ee,https://admin.test.buerokratt.ee"
+
+            - name: DB_HOST
+              value: "$(DATABASE_SERVICE_SERVICE_HOST)"
+            - name: DB_PORT
+              value: "$(DATABASE_SERVICE_PORT)"
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: file-handler-secrets
+                  key: db-name
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: file-handler-secrets
+                  key: db-user
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: file-handler-secrets
+                  key: db-password
+
+            - name: STORAGE_ACCOUNT_ID
+              value: "s3-default"
+            - name: S3_FERRY_URL
+              value: "http://s3-ferry:3000"
+            - name: S3_REGION
+              value: "eu-west-1"
+            - name: S3_ENDPOINT_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: file-handler-config
+                  key: s3-endpoint
+            - name: S3_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: file-handler-secrets
+                  key: s3-access-key
+            - name: S3_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: file-handler-secrets
+                  key: s3-secret-key
+            - name: S3_DATA_BUCKET_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: file-handler-config
+                  key: s3-bucket-name
+            - name: S3_DATA_BUCKET_PATH
+              value: "files"
+
+            - name: CLAMAV_HOST
+              value: "clamav"
+            - name: CLAMAV_PORT
+              value: "3310"
+            - name: CLAMAV_TIMEOUT
+              value: "60000"
+            - name: ENABLE_VIRUS_SCAN
+              value: "true"
+
+            - name: MAX_FILE_SIZE
+              value: "524288000"
+            - name: CHUNK_SIZE
+              value: "5242880"
+
+            - name: RATE_LIMIT_TTL
+              value: "60000"
+            - name: RATE_LIMIT_MAX
+              value: "100"
+
+            - name: LOG_LEVEL
+              value: "info"
+
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: 1000m
+              memory: 512Mi
+
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+
+      volumes:
+        - name: tmp
+          emptyDir: {}
+
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - file-handler
+                topologyKey: kubernetes.io/hostname

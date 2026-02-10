@@ -1,0 +1,176 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: filepolicies.storage.buerokratt.ee
+  annotations:
+    description: "Custom Resource Definition for defining file attachment policies in Bürokratt"
+spec:
+  group: storage.buerokratt.ee
+  names:
+    plural: filepolicies
+    singular: filepolicy
+    kind: FilePolicy
+    shortNames:
+      - fp
+    categories:
+      - buerokratt
+      - storage
+  scope: Namespaced
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              required:
+                - mimeTypeWhitelist
+                - maxSize
+                - scanEnabled
+              properties:
+                # MIME type whitelist configuration
+                mimeTypeWhitelist:
+                  type: object
+                  description: "Allowed MIME types organized by category"
+                  properties:
+                    document:
+                      type: array
+                      items:
+                        type: string
+                      description: "Allowed document MIME types"
+                      default:
+                        - application/pdf
+                        - application/msword
+                        - application/vnd.openxmlformats-officedocument.wordprocessingml.document
+                    image:
+                      type: array
+                      items:
+                        type: string
+                      description: "Allowed image MIME types"
+                      default:
+                        - image/jpeg
+                        - image/png
+                        - image/gif
+                    archive:
+                      type: array
+                      items:
+                        type: string
+                      description: "Allowed archive MIME types"
+                      default:
+                        - application/zip
+                        - application/gzip
+
+                # File size limits
+                maxSize:
+                  type: string
+                  description: "Maximum file size (e.g., 100MB, 500MB)"
+                  pattern: '^[0-9]+(KB|MB|GB)$'
+                  default: "50MB"
+
+                maxSizeByCategory:
+                  type: object
+                  description: "Category-specific size limits"
+                  properties:
+                    document:
+                      type: string
+                      default: "100MB"
+                    image:
+                      type: string
+                      default: "20MB"
+                    archive:
+                      type: string
+                      default: "500MB"
+
+                # Virus scanning configuration
+                scanEnabled:
+                  type: boolean
+                  description: "Enable virus scanning"
+                  default: true
+
+                scanOnUpload:
+                  type: boolean
+                  description: "Scan files immediately on upload"
+                  default: true
+
+                quarantineInfected:
+                  type: boolean
+                  description: "Move infected files to quarantine"
+                  default: true
+
+                # Access control
+                accessControl:
+                  type: object
+                  properties:
+                    requireAuthentication:
+                      type: boolean
+                      default: true
+                    allowedRoles:
+                      type: array
+                      items:
+                        type: string
+                      description: "Roles allowed to upload files"
+
+                # Rate limiting
+                rateLimiting:
+                  type: object
+                  properties:
+                    enabled:
+                      type: boolean
+                      default: true
+                    maxUploadsPerMinute:
+                      type: integer
+                      default: 20
+                    maxDownloadsPerMinute:
+                      type: integer
+                      default: 100
+
+                # Retention policy
+                retention:
+                  type: object
+                  properties:
+                    enabled:
+                      type: boolean
+                      default: false
+                    days:
+                      type: integer
+                      description: "Retain files for specified days"
+                    archiveAfterDays:
+                      type: integer
+                      description: "Archive to cold storage after specified days"
+
+                # Storage configuration
+                storage:
+                  type: object
+                  properties:
+                    backend:
+                      type: string
+                      enum: ["s3", "azure", "minio"]
+                      default: "s3"
+                    bucketName:
+                      type: string
+                    multipartThreshold:
+                      type: string
+                      default: "100MB"
+
+      additionalPrinterColumns:
+        - name: Max-Size
+          type: string
+          description: Maximum file size
+          jsonPath: .spec.maxSize
+        - name: Scan-Enabled
+          type: boolean
+          description: Virus scanning enabled
+          jsonPath: .spec.scanEnabled
+        - name: Age
+          type: date
+          jsonPath: .metadata.creationTimestamp
+        - name: Enabled
+          type: boolean
+          description: Policy is enabled
+          jsonPath: .spec.enabled
+
+      subresources:
+        status: {}

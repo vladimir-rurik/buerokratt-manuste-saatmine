@@ -1,0 +1,191 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: fileattachments.storage.buerokratt.ee
+  annotations:
+    description: "Custom Resource Definition for managing file attachments in Bürokratt"
+spec:
+  group: storage.buerokratt.ee
+  names:
+    plural: fileattachments
+    singular: fileattachment
+    kind: FileAttachment
+    shortNames:
+      - fa
+    categories:
+      - buerokratt
+      - storage
+  scope: Namespaced
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              required:
+                - filename
+                - mimeType
+                - size
+                - storagePath
+                - uploadedBy
+              properties:
+                # File metadata
+                filename:
+                  type: string
+                  description: "Original filename"
+                  minLength: 1
+                  maxLength: 255
+
+                originalFilename:
+                  type: string
+                  description: "Original filename before sanitization"
+
+                mimeType:
+                  type: string
+                  description: "MIME type of the file"
+                  pattern: '^[a-z]+/[a-z0-9.\-]+$'
+
+                size:
+                  type: integer
+                  description: "File size in bytes"
+                  minimum: 1
+
+                checksum:
+                  type: string
+                  description: "SHA-256 checksum of file content"
+                  pattern: '^[a-f0-9]{64}$'
+
+                # Storage information
+                storagePath:
+                  type: string
+                  description: "Path in storage backend"
+
+                storageAccountId:
+                  type: string
+                  description: "Storage account ID"
+
+                container:
+                  type: string
+                  description: "Storage container/bucket name"
+
+                # Ownership
+                uploadedBy:
+                  type: string
+                  description: "User ID who uploaded the file"
+
+                chatId:
+                  type: string
+                  description: "Associated chat session ID"
+                  nullable: true
+
+                # Security
+                scanStatus:
+                  type: string
+                  enum: ["pending", "scanning", "clean", "infected"]
+                  default: "pending"
+
+                scanResult:
+                  type: string
+                  description: "JSON-encoded scan result"
+                  nullable: true
+
+                # Access control
+                accessPolicy:
+                  type: string
+                  enum: ["private", "chat", "organization", "public"]
+                  default: "private"
+
+                allowedUsers:
+                  type: array
+                  items:
+                    type: string
+                  description: "List of user IDs with access"
+
+                allowedRoles:
+                  type: array
+                  items:
+                    type: string
+                  description: "List of roles with access"
+
+                # Lifecycle
+                expiresAt:
+                  type: string
+                  format: date-time
+                  description: "File expiration timestamp"
+                  nullable: true
+
+                retentionUntil:
+                  type: string
+                  format: date-time
+                  description: "Minimum retention period for legal requirements"
+                  nullable: true
+
+                # Metadata
+                metadata:
+                  type: object
+                  description: "Additional metadata as key-value pairs"
+                  x-kubernetes-preserve-unknown-fields: true
+
+            status:
+              type: object
+              properties:
+                phase:
+                  type: string
+                  enum: ["Pending", "Uploading", "Scanning", "Active", "Expired", "Deleted", "Quarantined"]
+                  default: "Pending"
+
+                downloadCount:
+                  type: integer
+                  default: 0
+
+                lastAccessedAt:
+                  type: string
+                  format: date-time
+                  nullable: true
+
+                signedUrl:
+                  type: string
+                  description: "Current signed URL for download"
+                  nullable: true
+
+                signedUrlExpiresAt:
+                  type: string
+                  format: date-time
+                  nullable: true
+
+                message:
+                  type: string
+                  description: "Human-readable status message"
+                  nullable: true
+
+      additionalPrinterColumns:
+        - name: Filename
+          type: string
+          description: Original filename
+          jsonPath: .spec.filename
+        - name: Size
+          type: string
+          description: File size
+          jsonPath: .spec.size
+        - name: MIME-Type
+          type: string
+          description: MIME type
+          jsonPath: .spec.mimeType
+        - name: Scan-Status
+          type: string
+          description: Virus scan status
+          jsonPath: .spec.scanStatus
+        - name: Phase
+          type: string
+          description: Current phase
+          jsonPath: .status.phase
+        - name: Age
+          type: date
+          jsonPath: .metadata.creationTimestamp
+
+      subresources:
+        status: {}

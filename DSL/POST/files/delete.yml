@@ -1,0 +1,76 @@
+declare:
+  call: declare
+  version: 1.0.0
+  description: Delete a file by ID
+  method: post
+  accepts: json
+  returns: json
+  namespace: files
+  allowlist:
+    body:
+    - field: fileId
+      type: string
+      description: File ID to delete
+    header:
+    - field: authorization
+      type: string
+      description: JWT bearer token
+    - field: cookie
+      type: string
+      description: Session cookie
+
+# Extract user information
+extract_user_info:
+  call: http.post
+  args:
+    url: "[#CHATBOT_TIM]/jwt/custom-jwt-userinfo"
+    contentType: plaintext
+    headers:
+      cookie: ${incoming.headers.cookie}
+    plaintext: "chatJwt"
+  result: userInfo
+  next: delete_file
+
+# Delete file from storage and database
+delete_file:
+  call: http.delete
+  args:
+    url: "[#FILE_HANDLER]/v1/files/[#incoming.body.fileId]"
+    headers:
+      cookie: ${incoming.headers.cookie}
+  result: deleteResult
+  next: check_delete_result
+
+# Check if deletion was successful
+check_delete_result:
+  switch:
+    - condition: ${deleteResult.response.statusCodeValue >= 200 && deleteResult.response.statusCodeValue < 300}
+      next: log_deletion
+  next: return_delete_error
+
+# Log successful deletion
+log_deletion:
+  call: http.post
+  args:
+    url: "[#CHATBOT_OPENSEARCH]/file-deletions/_doc"
+    body:
+      timestamp: ${new Date().toISOString()}
+      fileId: ${incoming.body.fileId}
+      deletedBy: ${userInfo.response.body.userId || userInfo.response.body.sub}
+  result: logResult
+  next: return_success
+
+# Return success
+return_success:
+  return:
+    fileId: ${incoming.body.fileId}
+    message: "File deleted successfully"
+  next: end
+
+# Return error
+return_delete_error:
+  return:
+    message: "Failed to delete file"
+    fileId: ${incoming.body.fileId}
+  status: 500
+  next: end

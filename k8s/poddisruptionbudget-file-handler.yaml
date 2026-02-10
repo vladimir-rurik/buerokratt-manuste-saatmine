@@ -1,0 +1,12 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: file-handler-pdb
+  labels:
+    app: file-handler
+    component: file-storage
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: file-handler

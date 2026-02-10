@@ -1,0 +1,122 @@
+declare:
+  call: declare
+  version: 1.0.0
+  description: Upload file with comprehensive validation and virus scanning
+  method: post
+  accepts: file
+  returns: json
+  namespace: files
+  allowlist:
+    body:
+    - field: file
+      type: file
+      description: File to upload (multipart/form-data)
+    - field: chatId
+      type: string
+      description: Associated chat session ID (optional)
+      optional: true
+    header:
+    - field: authorization
+      type: string
+      description: JWT bearer token
+    - field: cookie
+      type: string
+      description: Session cookie (alternative to authorization header)
+
+# Extract user information from JWT
+extract_user_info:
+  call: http.post
+  args:
+    url: "[#CHATBOT_TIM]/jwt/custom-jwt-userinfo"
+    contentType: plaintext
+    headers:
+      cookie: ${incoming.headers.cookie}
+    plaintext: "chatJwt"
+  result: userInfo
+  next: validate_file
+
+# Validate file before processing
+validate_file:
+  call: http.post
+  args:
+    url: "[#FILE_HANDLER]/v1/files/validate"
+    contentType: multipart/form-data
+    body:
+      file: ${incoming.body.file}
+  result: validationResult
+  next: check_validation
+
+# Check if validation passed
+check_validation:
+  switch:
+    - condition: ${validationResult.response.body.valid == true}
+      next: scan_file
+  next: return_validation_error
+
+# Scan file for viruses
+scan_file:
+  call: http.post
+  args:
+    url: "[#FILE_HANDLER]/v1/files/upload"
+    contentType: multipart/form-data
+    body:
+      file: ${incoming.body.file}
+      chatId: ${incoming.body.chatId}
+    headers:
+      cookie: ${incoming.headers.cookie}
+  result: uploadResult
+  next: check_upload_result
+
+# Check if upload was successful
+check_upload_result:
+  switch:
+    - condition: ${uploadResult.response.statusCodeValue >= 200 && uploadResult.response.statusCodeValue < 300}
+      next: log_success
+  next: return_upload_error
+
+# Log successful upload to OpenSearch
+log_success:
+  call: http.post
+  args:
+    url: "[#CHATBOT_OPENSEARCH]/file-uploads/_doc"
+    body:
+      timestamp: ${new Date().toISOString()}
+      fileId: ${uploadResult.response.body.fileId}
+      filename: ${uploadResult.response.body.filename}
+      size: ${uploadResult.response.body.size}
+      mimeType: ${uploadResult.response.body.mimeType}
+      uploadedBy: ${userInfo.response.body.userId || userInfo.response.body.sub}
+      chatId: ${incoming.body.chatId}
+      scanStatus: ${uploadResult.response.body.scanStatus}
+  result: logResult
+  next: return_success
+
+# Return success response
+return_success:
+  return:
+    fileId: ${uploadResult.response.body.fileId}
+    filename: ${uploadResult.response.body.filename}
+    size: ${uploadResult.response.body.size}
+    mimeType: ${uploadResult.response.body.mimeType}
+    uploadedAt: ${uploadResult.response.body.uploadedAt}
+    scanStatus: ${uploadResult.response.body.scanStatus}
+    warnings: ${uploadResult.response.body.warnings}
+    message: "File uploaded successfully"
+  next: end
+
+# Return validation error
+return_validation_error:
+  return:
+    message: "File validation failed"
+    errors: ${validationResult.response.body.errors}
+    warnings: ${validationResult.response.body.warnings}
+  status: 400
+  next: end
+
+# Return upload error
+return_upload_error:
+  return:
+    message: "File upload failed"
+    error: "Upload service error"
+  status: 500
+  next: end

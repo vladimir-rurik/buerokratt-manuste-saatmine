@@ -1,0 +1,131 @@
+---
+# Example FileAttachment for a chat document
+apiVersion: storage.buerokratt.ee/v1alpha1
+kind: FileAttachment
+metadata:
+  name: chat-doc-12345678
+  namespace: buerokratt
+  labels:
+    app: buerokratt
+    component: file-storage
+    type: chat-attachment
+    chat-id: chat-abc-123
+spec:
+  filename: "document.pdf"
+  originalFilename: "My Important Document.pdf"
+  mimeType: "application/pdf"
+  size: 1048576  # 1MB
+  checksum: "a1b2c3d4e5f6...64-character-sha256-hash"
+
+  storagePath: "files/2025/02/09/uuid-document.pdf"
+  storageAccountId: "s3-default"
+  container: "buerokratt-chat-files"
+
+  uploadedBy: "user-123"
+  chatId: "chat-abc-123"
+
+  scanStatus: "clean"
+  scanResult: '{"clean": true, "infected": false, "viruses": [], "scanTime": 1250}'
+
+  accessPolicy: "chat"
+  allowedUsers: []
+  allowedRoles: ["citizen", "official"]
+
+  expiresAt: "2026-02-09T00:00:00Z"
+  retentionUntil: "2028-02-09T00:00:00Z"  # 3 years legal requirement
+
+  metadata:
+    originalUploader: "user-123"
+    uploadSource: "chat-widget"
+    documentType: "application"
+    language: "et"
+
+status:
+  phase: "Active"
+  downloadCount: 5
+  lastAccessedAt: "2025-02-09T15:30:00Z"
+  signedUrl: "https://files.test.buerokratt.ee/signed-url-token..."
+  signedUrlExpiresAt: "2025-02-09T16:30:00Z"
+  message: "File is available for download"
+
+---
+# Example FileAttachment for an infected file (quarantined)
+apiVersion: storage.buerokratt.ee/v1alpha1
+kind: FileAttachment
+metadata:
+  name: infected-file-999
+  namespace: buerokratt
+  labels:
+    app: buerokratt
+    component: file-storage
+    status: quarantined
+spec:
+  filename: "malware.exe"
+  originalFilename: "innocent-looking.exe"
+  mimeType: "application/x-msdownload"
+  size: 524288
+
+  storagePath: "quarantine/2025/02/09/uuid-malware.exe"
+  storageAccountId: "s3-default"
+  container: "buerokratt-quarantine"
+
+  uploadedBy: "user-456"
+  chatId: "chat-xyz-789"
+
+  scanStatus: "infected"
+  scanResult: '{"clean": false, "infected": true, "viruses": ["Trojan.Generic.123456"], "scanTime": 850}'
+
+  accessPolicy: "private"
+  allowedUsers: ["admin"]
+  allowedRoles: ["admin"]
+
+  metadata:
+    threatLevel: "high"
+    detectedAt: "2025-02-09T12:00:00Z"
+
+status:
+  phase: "Quarantined"
+  downloadCount: 0
+  message: "File quarantined due to virus detection"
+
+---
+# Example FileAttachment for a system import
+apiVersion: storage.buerokratt.ee/v1alpha1
+kind: FileAttachment
+metadata:
+  name: system-import-20250209
+  namespace: buerokratt
+  labels:
+    app: buerokratt
+    component: file-storage
+    type: system-import
+spec:
+  filename: "citizens-import-2025-02-09.json"
+  originalFilename: "citizens_batch_import.json"
+  mimeType: "application/json"
+  size: 52428800  # 50MB
+  checksum: "sha256-hash-of-import-file"
+
+  storagePath: "imports/2025/02/09/citizens-import.json"
+  storageAccountId: "s3-default"
+  container: "buerokratt-system-imports"
+
+  uploadedBy: "system-service"
+  scanStatus: "clean"
+
+  accessPolicy: "private"
+  allowedUsers: ["admin", "data-importer"]
+  allowedRoles: ["admin", "data-manager"]
+
+  retentionUntil: "2035-02-09T00:00:00Z"  # 10 years
+
+  metadata:
+    importType: "citizens_batch"
+    recordCount: 150000
+    importedAt: "2025-02-09T10:00:00Z"
+    validatedBy: "data-validator-service"
+
+status:
+  phase: "Active"
+  downloadCount: 0
+  message: "Import file stored and processed"

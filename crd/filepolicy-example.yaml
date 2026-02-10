@@ -1,0 +1,157 @@
+---
+# Example FilePolicy for chat attachments (permissive)
+apiVersion: storage.buerokratt.ee/v1alpha1
+kind: FilePolicy
+metadata:
+  name: chat-attachments-policy
+  namespace: buerokratt
+  labels:
+    app: buerokratt
+    component: file-storage
+    usage: chat
+spec:
+  mimeTypeWhitelist:
+    document:
+      - application/pdf
+      - application/msword
+      - application/vnd.openxmlformats-officedocument.wordprocessingml.document
+      - application/vnd.oasis.opendocument.text
+      - text/plain
+    image:
+      - image/jpeg
+      - image/png
+      - image/gif
+      - image/webp
+    archive:
+      - application/zip
+      - application/gzip
+    data:
+      - application/json
+      - text/csv
+
+  maxSize: "50MB"
+  maxSizeByCategory:
+    document: "100MB"
+    image: "20MB"
+    archive: "200MB"
+    data: "10MB"
+
+  scanEnabled: true
+  scanOnUpload: true
+  quarantineInfected: true
+
+  accessControl:
+    requireAuthentication: true
+    allowedRoles:
+      - citizen
+      - official
+      - system
+
+  rateLimiting:
+    enabled: true
+    maxUploadsPerMinute: 20
+    maxDownloadsPerMinute: 100
+
+  retention:
+    enabled: true
+    days: 365
+    archiveAfterDays: 90
+
+  storage:
+    backend: s3
+    bucketName: buerokratt-chat-files
+    multipartThreshold: "100MB"
+
+---
+# Example FilePolicy for backoffice documents (restrictive)
+apiVersion: storage.buerokratt.ee/v1alpha1
+kind: FilePolicy
+metadata:
+  name: backoffice-documents-policy
+  namespace: buerokratt
+  labels:
+    app: buerokratt
+    component: file-storage
+    usage: backoffice
+spec:
+  mimeTypeWhitelist:
+    document:
+      - application/pdf
+      - application/msword
+      - application/vnd.openxmlformats-officedocument.wordprocessingml.document
+    image:
+      - image/jpeg
+      - image/png
+
+  maxSize: "25MB"
+  maxSizeByCategory:
+    document: "25MB"
+    image: "10MB"
+
+  scanEnabled: true
+  scanOnUpload: true
+  quarantineInfected: true
+
+  accessControl:
+    requireAuthentication: true
+    allowedRoles:
+      - official
+      - admin
+
+  rateLimiting:
+    enabled: true
+    maxUploadsPerMinute: 50
+    maxDownloadsPerMinute: 200
+
+  retention:
+    enabled: true
+    days: 2555  # 7 years for legal requirements
+    archiveAfterDays: 365
+
+  storage:
+    backend: s3
+    bucketName: buerokratt-backoffice-files
+    multipartThreshold: "50MB"
+
+---
+# Example FilePolicy for system imports (very restrictive)
+apiVersion: storage.buerokratt.ee/v1alpha1
+kind: FilePolicy
+metadata:
+  name: system-imports-policy
+  namespace: buerokratt
+  labels:
+    app: buerokratt
+    component: file-storage
+    usage: system-import
+spec:
+  mimeTypeWhitelist:
+    data:
+      - application/json
+      - application/xml
+      - text/csv
+      - text/xml
+
+  maxSize: "100MB"
+
+  scanEnabled: true
+  scanOnUpload: true
+  quarantineInfected: true
+
+  accessControl:
+    requireAuthentication: true
+    allowedRoles:
+      - system
+      - admin
+
+  rateLimiting:
+    enabled: false  # Disabled for system imports
+
+  retention:
+    enabled: true
+    days: 3650  # 10 years
+
+  storage:
+    backend: s3
+    bucketName: buerokratt-system-imports
+    multipartThreshold: "50MB"

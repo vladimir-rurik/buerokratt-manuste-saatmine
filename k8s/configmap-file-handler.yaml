@@ -1,0 +1,63 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: file-handler-config
+  labels:
+    app: file-handler
+    component: file-storage
+data:
+  # S3 Configuration
+  s3-endpoint: "http://minio:9000"
+  s3-bucket-name: "buerokratt-files"
+
+  # File Upload Limits
+  max-file-size: "524288000"  # 500MB
+  chunk-size: "5242880"  # 5MB
+
+  # Rate Limiting
+  rate-limit-ttl: "60000"  # 60 seconds
+  rate-limit-max: "100"  # 100 requests per minute
+
+  # Logging
+  log-level: "info"
+
+  # MIME Type Configuration
+  mime-whitelist: |
+    {
+      "document": [
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/vnd.oasis.opendocument.text",
+        "application/rtf",
+        "text/plain"
+      ],
+      "image": [
+        "image/jpeg",
+        "image/png",
+        "image/gif",
+        "image/webp",
+        "image/svg+xml"
+      ],
+      "archive": [
+        "application/zip",
+        "application/x-tar",
+        "application/gzip"
+      ],
+      "data": [
+        "application/json",
+        "application/xml",
+        "text/xml",
+        "text/csv"
+      ]
+    }
+
+  # File Size Limits by Category
+  file-size-limits: |
+    {
+      "default": 52428800,
+      "document": 104857600,
+      "image": 20971520,
+      "archive": 524288000,
+      "data": 10485760
+    }

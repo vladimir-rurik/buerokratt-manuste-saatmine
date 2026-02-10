@@ -1,0 +1,33 @@
+declare:
+  call: declare
+  version: 1.0.0
+  description: Validate file without uploading (useful for client-side validation)
+  method: post
+  accepts: file
+  returns: json
+  namespace: files
+  allowlist:
+    body:
+    - field: file
+      type: file
+      description: File to validate
+
+# Validate file
+validate_file:
+  call: http.post
+  args:
+    url: "[#FILE_HANDLER]/v1/files/validate"
+    contentType: multipart/form-data
+    body:
+      file: ${incoming.body.file}
+  result: validationResult
+  next: return_result
+
+# Return validation result
+return_result:
+  return:
+    valid: ${validationResult.response.body.valid}
+    errors: ${validationResult.response.body.errors}
+    warnings: ${validationResult.response.body.warnings}
+    category: ${validationResult.response.body.category}
+  next: end

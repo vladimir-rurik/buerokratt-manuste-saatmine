@@ -1,0 +1,85 @@
+declare:
+  call: declare
+  version: 1.0.0
+  description: Get secure download URL for a file
+  method: get
+  accepts: json
+  returns: json
+  namespace: files
+  allowlist:
+    params:
+    - field: fileId
+      type: string
+      description: File ID to download
+    header:
+    - field: authorization
+      type: string
+      description: JWT bearer token
+    - field: cookie
+      type: string
+      description: Session cookie
+
+# Extract user information
+extract_user_info:
+  call: http.post
+  args:
+    url: "[#CHATBOT_TIM]/jwt/custom-jwt-userinfo"
+    contentType: plaintext
+    headers:
+      cookie: ${incoming.headers.cookie}
+    plaintext: "chatJwt"
+  result: userInfo
+  next: get_file_metadata
+
+# Get file metadata and generate signed URL
+get_file_metadata:
+  call: http.get
+  args:
+    url: "[#FILE_HANDLER]/v1/files/[#incoming.params.fileId]"
+    headers:
+      cookie: ${incoming.headers.cookie}
+  result: fileMetadata
+  next: check_file_access
+
+# Check if file was found and user has access
+check_file_access:
+  switch:
+    - condition: ${fileMetadata.response.statusCodeValue >= 200 && fileMetadata.response.statusCodeValue < 300}
+      next: log_download_access
+  next: return_access_denied
+
+# Log download access to OpenSearch
+log_download_access:
+  call: http.post
+  args:
+    url: "[#CHATBOT_OPENSEARCH]/file-downloads/_doc"
+    body:
+      timestamp: ${new Date().toISOString()}
+      fileId: ${incoming.params.fileId}
+      userId: ${userInfo.response.body.userId || userInfo.response.body.sub}
+      filename: ${fileMetadata.response.body.filename}
+    headers:
+      cookie: ${incoming.headers.cookie}
+  result: logResult
+  next: return_download_url
+
+# Return download URL
+return_download_url:
+  return:
+    fileId: ${fileMetadata.response.body.fileId}
+    filename: ${fileMetadata.response.body.filename}
+    size: ${fileMetadata.response.body.size}
+    mimeType: ${fileMetadata.response.body.mimeType}
+    downloadUrl: ${fileMetadata.response.body.downloadUrl}
+    uploadedAt: ${fileMetadata.response.body.uploadedAt}
+    uploadedBy: ${fileMetadata.response.body.uploadedBy}
+    scanStatus: ${fileMetadata.response.body.scanStatus}
+    message: "File access granted"
+  next: end
+
+# Return access denied
+return_access_denied:
+  return:
+    message: "Access denied or file not found"
+  status: 403
+  next: end
