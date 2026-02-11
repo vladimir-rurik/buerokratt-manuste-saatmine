@@ -57,8 +57,8 @@ See lahendus pakub kõikehõlmavat, turvalist ja skaleeritavat manuste haldamiss
 │   - Viiruseotsing       │              │    - Abstraktsioon   │
 │  - Üleslaadimise loogika│              │    - Multipart       │
 └────────┬────────────────┘              └──────────┬───────────┘
-         │                                       │
-         ▼                                       ▼
+         │                                          │
+         ▼                                          ▼
 ┌──────────────────────┐              ┌─────────────────────────┐
 │      ClamAV          │              │   S3 Salvestus          │
 │   - Viiruseotsing    │              │   - MinIO/AWS/Azure     │
