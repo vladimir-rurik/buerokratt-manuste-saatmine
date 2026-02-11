@@ -8,34 +8,34 @@ See dokument kirjeldab kõikehõlmavat, turvalist manuste haldamise lahendust, m
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                         Kliendirakendus                            │
-│                    (Vestlusvidin, Backoffice GUI)                  │
+│                         Kliendirakendus                             │
+│                    (Vestlusvidin, Backoffice GUI)                   │
 └─────────────────────────────┬───────────────────────────────────────┘
                               │
                               │ HTTPS (multipart/form-data)
                               ▼
 ┌─────────────────────────────────────────────────────────────────────┐
-│                         Ruuteri ruuter                             │
-│  (DSL: validate-file → scan-virus → upload-s3 → create-record)     │
+│                         Ruuteri ruuter                              │
+│  (DSL: validate-file → scan-virus → upload-s3 → create-record)      │
 └───────────────────┬───────────────────────────┬─────────────────────┘
                     │                           │
                     │                           │
         ┌───────────▼──────────┐   ┌────────────▼──────────────────┐
-        │  Failihandleri teenus│   │      S3-Ferry teenus         │
-        │  (Valideerimisloogika)│   │   (Salvestuse abstraktsioon) │
+        │  Failihandleri teenus│   │      S3-Ferry teenus          │
+        │ (Valideerimisloogika)│   │   (Salvestuse abstraktsioon)  │
         └───────────┬──────────┘   └───────────┬───────────────────┘
                     │                          │
                     │                          │
         ┌───────────▼──────────┐   ┌───────────▼────────────────────┐
-        │  ClamAVi skänner     │   │  S3-ühilduv salvestus         │
-        │  (Viiruseotsing)     │   │  (MinIO/AWS S3/Azure Blob)    │
+        │  ClamAVi skänner     │   │  S3-ühilduv salvestus          │
+        │  (Viiruseotsing)     │   │  (MinIO/AWS S3/Azure Blob)     │
         └──────────────────────┘   └────────────────────────────────┘
 
                     │
                     ▼
         ┌───────────────────────┐
-        │  Resqli andmebaas      │
-        │  (Faili metaandmed)    │
+        │  Resqli andmebaas     │
+        │  (Faili metaandmed)   │
         └───────────────────────┘
 ```
 

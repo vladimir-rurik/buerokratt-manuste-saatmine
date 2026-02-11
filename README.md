@@ -41,28 +41,29 @@ See lahendus pakub kõikehõlmavat, turvalist ja skaleeritavat manuste haldamiss
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                     Kliendirakendused                       │
-│              (Vestlusvidin, Backoffice GUI)                  │
+│              (Vestlusvidin, Backoffice GUI)                 │
 └─────────────────────────┬───────────────────────────────────┘
                           │
                           ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                        Ruuteri ruuter                       │
-│              (DSL: valideeri → skaneeri → laadi üles → salvesta)        └────────┬────────────────────────────────────────┬───────────┘
+│         (DSL: valideeri → skaneeri → laadi üles → salvesta) │
+└────────┬────────────────────────────────────────┬───────────┘
          │                                        │
          ▼                                        ▼
-┌──────────────────────┐              ┌──────────────────────┐
-│   Failihandler       │              │    S3-Ferry          │
-│   - Valideerimine    │              │    - Salvestus       │
-│   - Viiruseotsing    │              │    - Abstraktsioon   │
-│   - Üleslaadimise loogika    │              │    - Multipart       │
-└────────┬─────────────┘              └──────────┬───────────┘
+┌─────────────────────────┐              ┌──────────────────────┐
+│   Failihandler          │              │    S3-Ferry          │
+│   - Valideerimine       │              │    - Salvestus       │
+│   - Viiruseotsing       │              │    - Abstraktsioon   │
+│  - Üleslaadimise loogika│              │    - Multipart       │
+└────────┬────────────────┘              └──────────┬───────────┘
          │                                       │
          ▼                                       ▼
-┌──────────────────────┐              ┌──────────────────────┐
-│      ClamAV          │              │   S3 Salvestus       │
-│   - Viiruseotsing    │              │   - MinIO/AWS/Azure  │
+┌──────────────────────┐              ┌─────────────────────────┐
+│      ClamAV          │              │   S3 Salvestus          │
+│   - Viiruseotsing    │              │   - MinIO/AWS/Azure     │
 │   - Karantiin        │              │   - Elutsükli poliitika │
-└──────────────────────┘              └──────────────────────┘
+└──────────────────────┘              └─────────────────────────┘
 
          │
          ▼
