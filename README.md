@@ -6,7 +6,7 @@ See lahendus pakub kõikehõlmavat, turvalist ja skaleeritavat manuste haldamiss
 
 ## Peamised funktsioonid
 
-✅ **Turvalisus esikohal**
+ **Turvalisus esikohal**
 - MIME tüübi valideerimine koos maagiliste numbrite kontrolliga
 - ClamAVi viiruseotsing koos karantiiniga
 - Allkirjastatud URL-id turvaliseks juurdepääsuks
@@ -14,21 +14,21 @@ See lahendus pakub kõikehõlmavat, turvalist ja skaleeritavat manuste haldamiss
 - Rollipõhine juurdepääsu kontroll
 - Põhjalik auditilogimine
 
-✅ **Skaleeritavus**
+ **Skaleeritavus**
 - Horisontaalne podi automaatne skaleerimine (2-10 replikat)
 - Mitmeosaline üleslaadimine suurte failide jaoks (>100MB)
 - S3-ühilduv salvestus (MinIO/AWS/Azure)
 - Asünkroonne viiruseotsingu järjekord
 - Olekuta teenuse disain
 
-✅ **Bürokstacki integratsioon**
+ **Bürokstacki integratsioon**
 - Ruuteri DSL töövoogud failioperatsioonideks
 - S3-Ferry integratsioon salvestuse abstraktsiooniks
 - TIMi (TARA) autentimise tugi
 - OpenSearchi auditilogimine
 - PostgreSQLi metaandmete salvestus
 
-✅ **Tootmisvalmis**
+ **Tootmisvalmis**
 - Kubernetesi juurutamismanifestid
 - Kohandatud ressursi definitsioonid (FilePolicy, FileAttachment)
 - Töökorras kontrollid ja sondid
